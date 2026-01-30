@@ -1,0 +1,7 @@
+{
+  "name": "PetCalm",
+  "description": "A comprehensive anxiety relief and behavior tracking application for pets, featuring calming sounds, desensitization training, and AI-powered insights.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

@@ -90,7 +90,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   type="text" 
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   placeholder="e.g. Luna"
                 />
               </div>
@@ -100,7 +100,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   type="text" 
                   value={formData.breed}
                   onChange={(e) => setFormData({...formData, breed: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   placeholder="e.g. Golden Retriever"
                 />
               </div>

@@ -147,7 +147,7 @@ export const BehaviorLog: React.FC = () => {
 
             <label className="block text-sm text-neutral-subtext mb-2">Notes</label>
             <textarea 
-              className="w-full border border-neutral-200 rounded-xl p-3 text-sm focus:border-primary outline-none mb-6"
+              className="w-full border border-neutral-200 rounded-xl p-3 text-sm focus:border-primary outline-none mb-6 bg-white text-gray-900"
               rows={3}
               value={newNotes}
               onChange={(e) => setNewNotes(e.target.value)}

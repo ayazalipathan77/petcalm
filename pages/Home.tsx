@@ -14,13 +14,19 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
 
   const moodEmojis = ['😰', '😕', '😐', '🙂', '😊'];
 
+  const isImage = (url?: string) => url && (url.startsWith('http') || url.startsWith('data:'));
+
   return (
     <div className="pb-24">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md px-6 py-4 flex justify-between items-center border-b border-neutral-100">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-lg overflow-hidden border-2 border-white shadow-sm">
-            {pet.photoUrl ? <img src={pet.photoUrl} alt={pet.name} /> : '🐶'}
+             {isImage(pet.photoUrl) ? (
+                <img src={pet.photoUrl} alt={pet.name} className="w-full h-full object-cover" />
+            ) : (
+                <span>{pet.photoUrl || (pet.type === 'cat' ? '🐱' : '🐶')}</span>
+            )}
           </div>
           <div>
             <h1 className="text-lg font-bold text-neutral-text leading-tight">{pet.name}</h1>

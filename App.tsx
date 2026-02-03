@@ -6,6 +6,7 @@ import { Sounds } from './pages/Sounds';
 import { Training } from './pages/Training';
 import { BehaviorLog } from './pages/BehaviorLog';
 import { PanicMode } from './pages/PanicMode';
+import { Profile } from './pages/Profile';
 import { ViewState, Pet } from './types';
 
 const App: React.FC = () => {
@@ -16,6 +17,10 @@ const App: React.FC = () => {
   const handleOnboardingComplete = (newPet: Pet) => {
     setPet(newPet);
     setView('HOME');
+  };
+
+  const handleUpdatePet = (updatedPet: Pet) => {
+    setPet(updatedPet);
   };
 
   const renderContent = () => {
@@ -31,13 +36,7 @@ const App: React.FC = () => {
       case 'LOG':
         return <BehaviorLog />;
       case 'PROFILE':
-        return (
-            <div className="flex flex-col items-center justify-center h-full text-neutral-subtext">
-                <div className="w-20 h-20 bg-neutral-200 rounded-full mb-4"></div>
-                <h2 className="text-xl font-bold">Profile Settings</h2>
-                <p>Coming in v1.1</p>
-            </div>
-        );
+        return <Profile pet={pet!} onUpdatePet={handleUpdatePet} />;
       default:
         return null;
     }

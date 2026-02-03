@@ -19,13 +19,22 @@ export interface Sound {
   color: string;
 }
 
+export interface TrainingStep {
+  id: number;
+  title: string;
+  description: string;
+  duration: string; // e.g., "5 mins" or "10 reps"
+  tip: string; // Clinical tip
+}
+
 export interface TrainingProgram {
   id: string;
   title: string;
   description: string;
-  totalSteps: number;
-  completedSteps: number;
-  category: 'Noise' | 'Separation' | 'Social' | 'Travel';
+  medicalContext: string; // Why this works scientifically
+  steps: TrainingStep[];
+  completedStepIndex: number; // 0 to steps.length
+  category: 'Noise' | 'Separation' | 'Social' | 'Travel' | 'Cooperative Care';
   icon: string;
 }
 

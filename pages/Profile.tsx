@@ -1,0 +1,166 @@
+import React, { useState, useRef } from 'react';
+import { Pet } from '../types';
+import { Button } from '../components/ui/Button';
+import { Camera, Save, Check } from 'lucide-react';
+import { TRIGGERS } from '../constants';
+
+interface ProfileProps {
+  pet: Pet;
+  onUpdatePet: (pet: Pet) => void;
+}
+
+const AVATARS = [
+  '🐶', '🐱', '🐕', '🐈', '🐩', '🐾', '🐺', '🦊', '🦁', '🐯'
+];
+
+export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet }) => {
+  const [name, setName] = useState(pet.name);
+  const [breed, setBreed] = useState(pet.breed);
+  const [photoUrl, setPhotoUrl] = useState(pet.photoUrl || '');
+  const [triggers, setTriggers] = useState<string[]>(pet.triggers || []);
+  const [showSaved, setShowSaved] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const toggleTrigger = (trigger: string) => {
+    if (triggers.includes(trigger)) {
+      setTriggers(triggers.filter(t => t !== trigger));
+    } else {
+      setTriggers([...triggers, trigger]);
+    }
+  };
+
+  const handleSave = () => {
+    onUpdatePet({
+      ...pet,
+      name,
+      breed,
+      photoUrl,
+      triggers
+    });
+    setShowSaved(true);
+    setTimeout(() => setShowSaved(false), 2000);
+  };
+
+  const isImage = (url: string) => url.startsWith('data:') || url.startsWith('http');
+
+  return (
+    <div className="pb-24 pt-6 px-6 h-full flex flex-col">
+      <h1 className="text-2xl font-bold text-neutral-text mb-6">Pet Profile</h1>
+
+      <div className="flex-1 overflow-y-auto hide-scrollbar -mx-6 px-6 pb-6">
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative group">
+            <div className="w-32 h-32 rounded-full bg-primary/10 border-4 border-white shadow-lg flex items-center justify-center text-5xl overflow-hidden">
+               {isImage(photoUrl) ? (
+                 <img src={photoUrl} alt="Pet" className="w-full h-full object-cover" />
+               ) : (
+                 <span>{photoUrl || (pet.type === 'cat' ? '🐱' : '🐶')}</span>
+               )}
+            </div>
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 p-3 bg-primary text-white rounded-full shadow-md hover:bg-primary-dark transition-colors"
+            >
+              <Camera size={18} />
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              className="hidden" 
+            />
+          </div>
+          <p className="text-xs text-neutral-subtext mt-3">Tap camera to upload custom photo</p>
+        </div>
+
+        <div className="space-y-8">
+          <section>
+            <h2 className="text-xs font-bold text-neutral-subtext uppercase tracking-wider mb-3">Or Choose Avatar</h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+              {AVATARS.map((avatar) => (
+                <button
+                  key={avatar}
+                  onClick={() => setPhotoUrl(avatar)}
+                  className={`w-14 h-14 flex-shrink-0 rounded-2xl flex items-center justify-center text-3xl bg-white border transition-all ${
+                    photoUrl === avatar ? 'border-primary bg-primary/10 ring-2 ring-primary/20 scale-110' : 'border-neutral-200 hover:border-primary/50'
+                  }`}
+                >
+                  {avatar}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-subtext mb-1">Name</label>
+              <input 
+                type="text" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-subtext mb-1">Breed</label>
+              <input 
+                type="text" 
+                value={breed}
+                onChange={(e) => setBreed(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              />
+            </div>
+          </section>
+
+          <section>
+            <label className="block text-sm font-medium text-neutral-subtext mb-3">Anxiety Triggers</label>
+            <div className="grid grid-cols-2 gap-3">
+              {TRIGGERS.map((trigger) => {
+                const isSelected = triggers.includes(trigger);
+                return (
+                  <button
+                    key={trigger}
+                    onClick={() => toggleTrigger(trigger)}
+                    className={`p-3 rounded-xl text-left text-sm font-medium transition-all relative overflow-hidden ${
+                      isSelected 
+                        ? 'bg-secondary text-white shadow-md' 
+                        : 'bg-white text-neutral-text border border-neutral-200'
+                    }`}
+                  >
+                    {trigger}
+                    {isSelected && <Check size={16} className="absolute top-2 right-2 opacity-50" />}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-neutral-100">
+         <Button onClick={handleSave} fullWidth className="gap-2" disabled={showSaved}>
+            {showSaved ? (
+                <>Saved Successfully!</>
+            ) : (
+                <>
+                    <Save size={20} />
+                    Save Changes
+                </>
+            )}
+          </Button>
+      </div>
+    </div>
+  );
+};

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { Onboarding } from './pages/Onboarding';
 import { Home } from './pages/Home';
@@ -10,17 +10,32 @@ import { Profile } from './pages/Profile';
 import { ViewState, Pet } from './types';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<ViewState>('ONBOARDING');
+  // Initialize state from local storage
+  const [pet, setPet] = useState<Pet | null>(() => {
+    const saved = localStorage.getItem('pet_profile');
+    try {
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.error("Failed to parse pet profile", e);
+      return null;
+    }
+  });
+
+  const [view, setView] = useState<ViewState>(() => {
+    return localStorage.getItem('pet_profile') ? 'HOME' : 'ONBOARDING';
+  });
+
   const [isPanicMode, setIsPanicMode] = useState(false);
-  const [pet, setPet] = useState<Pet | null>(null);
 
   const handleOnboardingComplete = (newPet: Pet) => {
     setPet(newPet);
+    localStorage.setItem('pet_profile', JSON.stringify(newPet));
     setView('HOME');
   };
 
   const handleUpdatePet = (updatedPet: Pet) => {
     setPet(updatedPet);
+    localStorage.setItem('pet_profile', JSON.stringify(updatedPet));
   };
 
   const renderContent = () => {

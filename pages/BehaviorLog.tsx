@@ -27,6 +27,10 @@ export const BehaviorLog: React.FC = () => {
     };
     setIncidents([newIncident, ...incidents]);
     setShowAddModal(false);
+    // Reset form
+    setNewSeverity(3);
+    setNewTrigger(TRIGGERS[0]);
+    setNewNotes('');
   };
 
   const handleAiAnalysis = async () => {
@@ -114,49 +118,62 @@ export const BehaviorLog: React.FC = () => {
         ))}
       </div>
 
-      {/* Add Modal Overlay (Simplified for single file) */}
+      {/* Add Modal Overlay */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 animate-slide-up">
-            <h2 className="text-xl font-bold mb-4">Log Incident</h2>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center animate-fade-in sm:p-4">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl flex flex-col max-h-[85vh] animate-slide-up shadow-2xl overflow-hidden">
             
-            <label className="block text-sm text-neutral-subtext mb-2">Trigger</label>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {TRIGGERS.slice(0, 5).map(t => (
-                <button 
-                  key={t}
-                  onClick={() => setNewTrigger(t)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${newTrigger === t ? 'bg-primary text-white border-primary' : 'border-neutral-200'}`}
-                >
-                  {t}
-                </button>
-              ))}
+            {/* Modal Header */}
+            <div className="p-6 pb-2 flex-shrink-0">
+               <h2 className="text-xl font-bold">Log Incident</h2>
             </div>
 
-            <label className="block text-sm text-neutral-subtext mb-2">Severity (1-5)</label>
-            <input 
-              type="range" min="1" max="5" 
-              value={newSeverity} 
-              onChange={(e) => setNewSeverity(Number(e.target.value) as any)}
-              className="w-full accent-primary mb-2"
-            />
-            <div className="flex justify-between text-xs text-neutral-400 mb-4">
-              <span>Mild</span>
-              <span>Panic</span>
+            {/* Scrollable Content */}
+            <div className="p-6 py-2 overflow-y-auto flex-1 min-h-0">
+                <label className="block text-sm text-neutral-subtext mb-2">Trigger</label>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {TRIGGERS.slice(0, 5).map(t => (
+                    <button 
+                      key={t}
+                      onClick={() => setNewTrigger(t)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${newTrigger === t ? 'bg-primary text-white border-primary' : 'border-neutral-200 text-neutral-600 hover:border-primary/50'}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                <label className="block text-sm text-neutral-subtext mb-2">Severity (1-5)</label>
+                <div className="px-1 mb-4">
+                    <input 
+                      type="range" min="1" max="5" 
+                      value={newSeverity} 
+                      onChange={(e) => setNewSeverity(Number(e.target.value) as any)}
+                      className="w-full accent-primary mb-2 cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-neutral-400 font-medium">
+                      <span>Mild</span>
+                      <span>Moderate</span>
+                      <span>Panic</span>
+                    </div>
+                </div>
+
+                <label className="block text-sm text-neutral-subtext mb-2">Notes</label>
+                <textarea 
+                  className="w-full border border-neutral-200 rounded-xl p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none mb-2 bg-white text-gray-900 resize-none"
+                  rows={4}
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  placeholder="What happened? (Optional)"
+                />
             </div>
 
-            <label className="block text-sm text-neutral-subtext mb-2">Notes</label>
-            <textarea 
-              className="w-full border border-neutral-200 rounded-xl p-3 text-sm focus:border-primary outline-none mb-6 bg-white text-gray-900"
-              rows={3}
-              value={newNotes}
-              onChange={(e) => setNewNotes(e.target.value)}
-              placeholder="What happened?"
-            />
-
-            <div className="flex gap-3">
-              <Button variant="ghost" fullWidth onClick={() => setShowAddModal(false)}>Cancel</Button>
-              <Button fullWidth onClick={handleSave}>Save Log</Button>
+            {/* Modal Footer (Sticky) */}
+            <div className="p-6 pt-4 flex-shrink-0 bg-white border-t border-neutral-100 pb-8 sm:pb-6">
+                <div className="flex gap-3">
+                  <Button variant="ghost" fullWidth onClick={() => setShowAddModal(false)}>Cancel</Button>
+                  <Button fullWidth onClick={handleSave}>Save Log</Button>
+                </div>
             </div>
           </div>
         </div>

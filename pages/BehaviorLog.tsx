@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
 import { Incident } from '../types';
-import { MOCK_INCIDENTS, TRIGGERS } from '../constants';
+import { TRIGGERS } from '../constants';
 import { Button } from '../components/ui/Button';
 import { getBehaviorAnalysis } from '../services/geminiService';
 import { Plus, BarChart2, Calendar, BrainCircuit } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-export const BehaviorLog: React.FC = () => {
-  const [incidents, setIncidents] = useState<Incident[]>(MOCK_INCIDENTS);
+interface BehaviorLogProps {
+  incidents: Incident[];
+  onAddIncident: (incident: Incident) => void;
+  petName: string;
+}
+
+export const BehaviorLog: React.FC<BehaviorLogProps> = ({ incidents, onAddIncident, petName }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // New Incident Form State
-  const [newSeverity, setNewSeverity] = useState<1|2|3|4|5>(3);
+  const [newSeverity, setNewSeverity] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [newTrigger, setNewTrigger] = useState(TRIGGERS[0]);
   const [newNotes, setNewNotes] = useState('');
 
@@ -25,7 +30,7 @@ export const BehaviorLog: React.FC = () => {
       severity: newSeverity,
       notes: newNotes
     };
-    setIncidents([newIncident, ...incidents]);
+    onAddIncident(newIncident);
     setShowAddModal(false);
     // Reset form
     setNewSeverity(3);
@@ -35,7 +40,7 @@ export const BehaviorLog: React.FC = () => {
 
   const handleAiAnalysis = async () => {
     setIsAnalyzing(true);
-    const result = await getBehaviorAnalysis(incidents, "Luna");
+    const result = await getBehaviorAnalysis(incidents, petName);
     setAiAnalysis(result);
     setIsAnalyzing(false);
   };
@@ -60,8 +65,8 @@ export const BehaviorLog: React.FC = () => {
         <h3 className="text-xs font-bold text-neutral-subtext uppercase tracking-wider mb-2">Severity Trend (Last 7)</h3>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
-            <XAxis dataKey="name" tick={{fontSize: 10}} axisLine={false} tickLine={false} />
-            <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+            <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+            <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
             <Bar dataKey="severity" radius={[4, 4, 4, 4]} barSize={20}>
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.severity > 3 ? '#E74C3C' : '#5B8A72'} />
@@ -73,10 +78,10 @@ export const BehaviorLog: React.FC = () => {
 
       {/* AI Analysis Button */}
       {!aiAnalysis && (
-        <Button 
-          variant="accent" 
-          fullWidth 
-          onClick={handleAiAnalysis} 
+        <Button
+          variant="accent"
+          fullWidth
+          onClick={handleAiAnalysis}
           isLoading={isAnalyzing}
           className="mb-6 flex items-center justify-center gap-2"
         >
@@ -102,18 +107,17 @@ export const BehaviorLog: React.FC = () => {
       <div className="space-y-3">
         {incidents.map(incident => (
           <div key={incident.id} className="bg-white p-4 rounded-xl border border-neutral-100 flex gap-4">
-             <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center text-white font-bold text-sm ${
-                incident.severity >= 4 ? 'bg-status-error' : incident.severity === 3 ? 'bg-status-warning' : 'bg-status-success'
-             }`}>
-                {incident.severity}
-             </div>
-             <div>
-               <div className="flex items-center gap-2">
-                 <h4 className="font-bold text-neutral-text">{incident.trigger}</h4>
-                 <span className="text-[10px] text-neutral-400">{new Date(incident.date).toLocaleDateString()}</span>
-               </div>
-               <p className="text-sm text-neutral-subtext mt-1">{incident.notes}</p>
-             </div>
+            <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center text-white font-bold text-sm ${incident.severity >= 4 ? 'bg-status-error' : incident.severity === 3 ? 'bg-status-warning' : 'bg-status-success'
+              }`}>
+              {incident.severity}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-bold text-neutral-text">{incident.trigger}</h4>
+                <span className="text-[10px] text-neutral-400">{new Date(incident.date).toLocaleDateString()}</span>
+              </div>
+              <p className="text-sm text-neutral-subtext mt-1">{incident.notes}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -122,58 +126,58 @@ export const BehaviorLog: React.FC = () => {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center animate-fade-in sm:p-4">
           <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl flex flex-col max-h-[85vh] animate-slide-up shadow-2xl overflow-hidden">
-            
+
             {/* Modal Header */}
             <div className="p-6 pb-2 flex-shrink-0">
-               <h2 className="text-xl font-bold">Log Incident</h2>
+              <h2 className="text-xl font-bold">Log Incident</h2>
             </div>
 
             {/* Scrollable Content */}
             <div className="p-6 py-2 overflow-y-auto flex-1 min-h-0">
-                <label className="block text-sm text-neutral-subtext mb-2">Trigger</label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {TRIGGERS.slice(0, 5).map(t => (
-                    <button 
-                      key={t}
-                      onClick={() => setNewTrigger(t)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${newTrigger === t ? 'bg-primary text-white border-primary' : 'border-neutral-200 text-neutral-600 hover:border-primary/50'}`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
+              <label className="block text-sm text-neutral-subtext mb-2">Trigger</label>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {TRIGGERS.slice(0, 5).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setNewTrigger(t)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${newTrigger === t ? 'bg-primary text-white border-primary' : 'border-neutral-200 text-neutral-600 hover:border-primary/50'}`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
 
-                <label className="block text-sm text-neutral-subtext mb-2">Severity (1-5)</label>
-                <div className="px-1 mb-4">
-                    <input 
-                      type="range" min="1" max="5" 
-                      value={newSeverity} 
-                      onChange={(e) => setNewSeverity(Number(e.target.value) as any)}
-                      className="w-full accent-primary mb-2 cursor-pointer"
-                    />
-                    <div className="flex justify-between text-xs text-neutral-400 font-medium">
-                      <span>Mild</span>
-                      <span>Moderate</span>
-                      <span>Panic</span>
-                    </div>
-                </div>
-
-                <label className="block text-sm text-neutral-subtext mb-2">Notes</label>
-                <textarea 
-                  className="w-full border border-neutral-200 rounded-xl p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none mb-2 bg-white text-gray-900 resize-none"
-                  rows={4}
-                  value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
-                  placeholder="What happened? (Optional)"
+              <label className="block text-sm text-neutral-subtext mb-2">Severity (1-5)</label>
+              <div className="px-1 mb-4">
+                <input
+                  type="range" min="1" max="5"
+                  value={newSeverity}
+                  onChange={(e) => setNewSeverity(Number(e.target.value) as any)}
+                  className="w-full accent-primary mb-2 cursor-pointer"
                 />
+                <div className="flex justify-between text-xs text-neutral-400 font-medium">
+                  <span>Mild</span>
+                  <span>Moderate</span>
+                  <span>Panic</span>
+                </div>
+              </div>
+
+              <label className="block text-sm text-neutral-subtext mb-2">Notes</label>
+              <textarea
+                className="w-full border border-neutral-200 rounded-xl p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none mb-2 bg-white text-gray-900 resize-none"
+                rows={4}
+                value={newNotes}
+                onChange={(e) => setNewNotes(e.target.value)}
+                placeholder="What happened? (Optional)"
+              />
             </div>
 
             {/* Modal Footer (Sticky) */}
             <div className="p-6 pt-4 flex-shrink-0 bg-white border-t border-neutral-100 pb-8 sm:pb-6">
-                <div className="flex gap-3">
-                  <Button variant="ghost" fullWidth onClick={() => setShowAddModal(false)}>Cancel</Button>
-                  <Button fullWidth onClick={handleSave}>Save Log</Button>
-                </div>
+              <div className="flex gap-3">
+                <Button variant="ghost" fullWidth onClick={() => setShowAddModal(false)}>Cancel</Button>
+                <Button fullWidth onClick={handleSave}>Save Log</Button>
+              </div>
             </div>
           </div>
         </div>

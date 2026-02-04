@@ -13,11 +13,51 @@ export const TRIGGERS = [
 ];
 
 export const MOCK_SOUNDS: Sound[] = [
-  { id: '1', title: 'Gentle Rain & White Noise', category: 'Nature', duration: 1800, isPremium: false, color: 'bg-blue-100' },
-  { id: '2', title: 'Calm Piano for Paws', category: 'Classical', duration: 1200, isPremium: false, color: 'bg-amber-100' },
-  { id: '3', title: 'Box Fan & Heartbeat', category: 'Specialized', duration: 3600, isPremium: true, color: 'bg-rose-100' },
-  { id: '4', title: 'Forest Breeze', category: 'Nature', duration: 2400, isPremium: false, color: 'bg-emerald-100' },
-  { id: '5', title: 'Deep Sleep Frequencies', category: 'Specialized', duration: 5000, isPremium: true, color: 'bg-purple-100' },
+  { 
+    id: '1', 
+    title: 'Gentle Rain & White Noise', 
+    category: 'Nature', 
+    duration: 1800, 
+    isPremium: false, 
+    color: 'bg-blue-100',
+    url: 'https://cdn.pixabay.com/download/audio/2022/05/17/audio_031f085732.mp3?filename=rain-and-thunder-16705.mp3' 
+  },
+  { 
+    id: '2', 
+    title: 'Calm Piano for Paws', 
+    category: 'Classical', 
+    duration: 1200, 
+    isPremium: false, 
+    color: 'bg-amber-100',
+    url: 'https://cdn.pixabay.com/download/audio/2022/02/10/audio_5b30612143.mp3?filename=piano-moment-11656.mp3'
+  },
+  { 
+    id: '3', 
+    title: 'Box Fan (Brown Noise)', 
+    category: 'Specialized', 
+    duration: 3600, 
+    isPremium: true, 
+    color: 'bg-rose-100',
+    url: 'https://cdn.pixabay.com/download/audio/2022/11/04/audio_c35272a76f.mp3?filename=brown-noise-12543.mp3'
+  },
+  { 
+    id: '4', 
+    title: 'Forest Breeze', 
+    category: 'Nature', 
+    duration: 2400, 
+    isPremium: false, 
+    color: 'bg-emerald-100',
+    url: 'https://cdn.pixabay.com/download/audio/2021/09/06/audio_07885d5360.mp3?filename=forest-birds-6762.mp3'
+  },
+  { 
+    id: '5', 
+    title: 'Deep Sleep Frequencies', 
+    category: 'Specialized', 
+    duration: 5000, 
+    isPremium: true, 
+    color: 'bg-purple-100',
+    url: 'https://cdn.pixabay.com/download/audio/2022/03/09/audio_c8c8a73467.mp3?filename=meditation-10657.mp3'
+  },
 ];
 
 export const MOCK_PROGRAMS: TrainingProgram[] = [

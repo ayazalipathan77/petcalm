@@ -17,6 +17,7 @@ export interface Sound {
   duration: number; // seconds
   isPremium: boolean;
   color: string;
+  url: string;
 }
 
 export interface TrainingStep {

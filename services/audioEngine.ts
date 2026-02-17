@@ -1,13 +1,14 @@
 /**
- * Web Audio API Noise Generator
- * Generates white, brown, and pink noise procedurally - zero file downloads needed.
+ * Web Audio API Sound Generator
+ * Generates noise, tones, and binaural beats procedurally - zero file downloads needed.
  */
 
-type NoiseType = 'white' | 'brown' | 'pink';
+export type GeneratorType = 'white' | 'brown' | 'pink' | 'purr' | 'binaural';
 
 export class NoiseGenerator {
   private ctx: AudioContext | null = null;
   private sourceNode: AudioBufferSourceNode | null = null;
+  private oscillators: OscillatorNode[] = [];
   private gainNode: GainNode | null = null;
   private _isPlaying = false;
 
@@ -15,7 +16,7 @@ export class NoiseGenerator {
     return this._isPlaying;
   }
 
-  private createBuffer(type: NoiseType): AudioBuffer {
+  private createNoiseBuffer(type: 'white' | 'brown' | 'pink'): AudioBuffer {
     const ctx = this.ctx!;
     const sampleRate = ctx.sampleRate;
     const length = sampleRate * 4; // 4-second buffer (will loop)
@@ -34,13 +35,12 @@ export class NoiseGenerator {
         for (let i = 0; i < length; i++) {
           const white = Math.random() * 2 - 1;
           last = (last + 0.02 * white) / 1.02;
-          data[i] = last * 3.5; // amplify
+          data[i] = last * 3.5;
         }
         break;
       }
 
       case 'pink': {
-        // Paul Kellet's refined method for pink noise
         let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
         for (let i = 0; i < length; i++) {
           const white = Math.random() * 2 - 1;
@@ -60,7 +60,57 @@ export class NoiseGenerator {
     return buffer;
   }
 
-  play(type: NoiseType, volume: number = 0.8): void {
+  private playNoise(type: 'white' | 'brown' | 'pink', volume: number): void {
+    const buffer = this.createNoiseBuffer(type);
+    this.sourceNode = this.ctx!.createBufferSource();
+    this.sourceNode.buffer = buffer;
+    this.sourceNode.loop = true;
+    this.sourceNode.connect(this.gainNode!);
+    this.sourceNode.start();
+  }
+
+  private playPurr(volume: number): void {
+    // 25Hz sine wave mimicking cat purr frequency
+    const osc = this.ctx!.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 25;
+    osc.connect(this.gainNode!);
+    osc.start();
+    this.oscillators.push(osc);
+
+    // Add subtle harmonic at 50Hz for richer purr
+    const osc2 = this.ctx!.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.value = 50;
+    const harmGain = this.ctx!.createGain();
+    harmGain.gain.value = 0.3;
+    osc2.connect(harmGain);
+    harmGain.connect(this.gainNode!);
+    osc2.start();
+    this.oscillators.push(osc2);
+  }
+
+  private playBinaural(volume: number): void {
+    // Binaural theta: 200Hz left + 205Hz right = 5Hz perceived beat
+    const merger = this.ctx!.createChannelMerger(2);
+    merger.connect(this.gainNode!);
+
+    const oscL = this.ctx!.createOscillator();
+    oscL.type = 'sine';
+    oscL.frequency.value = 200;
+    oscL.connect(merger, 0, 0); // Left channel
+    oscL.start();
+    this.oscillators.push(oscL);
+
+    const oscR = this.ctx!.createOscillator();
+    oscR.type = 'sine';
+    oscR.frequency.value = 205;
+    oscR.connect(merger, 0, 1); // Right channel
+    oscR.start();
+    this.oscillators.push(oscR);
+  }
+
+  play(type: GeneratorType, volume: number = 0.8): void {
     this.stop();
 
     this.ctx = new AudioContext();
@@ -68,12 +118,19 @@ export class NoiseGenerator {
     this.gainNode.gain.value = volume;
     this.gainNode.connect(this.ctx.destination);
 
-    const buffer = this.createBuffer(type);
-    this.sourceNode = this.ctx.createBufferSource();
-    this.sourceNode.buffer = buffer;
-    this.sourceNode.loop = true;
-    this.sourceNode.connect(this.gainNode);
-    this.sourceNode.start();
+    switch (type) {
+      case 'white':
+      case 'brown':
+      case 'pink':
+        this.playNoise(type, volume);
+        break;
+      case 'purr':
+        this.playPurr(volume);
+        break;
+      case 'binaural':
+        this.playBinaural(volume);
+        break;
+    }
 
     this._isPlaying = true;
   }
@@ -99,6 +156,12 @@ export class NoiseGenerator {
   }
 
   stop(): void {
+    for (const osc of this.oscillators) {
+      try { osc.stop(); } catch {}
+      osc.disconnect();
+    }
+    this.oscillators = [];
+
     if (this.sourceNode) {
       try { this.sourceNode.stop(); } catch {}
       this.sourceNode.disconnect();
@@ -121,7 +184,7 @@ export function isGeneratedNoise(url: string): boolean {
   return url.startsWith('generate:');
 }
 
-/** Extract noise type from URL like 'generate:white' */
-export function getNoiseType(url: string): NoiseType {
-  return url.split(':')[1] as NoiseType;
+/** Extract generator type from URL like 'generate:white' */
+export function getNoiseType(url: string): GeneratorType {
+  return url.split(':')[1] as GeneratorType;
 }

@@ -7,6 +7,7 @@ import { Training } from './pages/Training';
 import { BehaviorLog } from './pages/BehaviorLog';
 import { PanicMode } from './pages/PanicMode';
 import { Profile } from './pages/Profile';
+import { Guide } from './pages/Guide';
 import { ViewState, Pet } from './types';
 import { usePet, migrateFromLocalStorage } from './services/db';
 
@@ -63,6 +64,8 @@ const App: React.FC = () => {
         return <Training />;
       case 'LOG':
         return <BehaviorLog petName={pet!.name} />;
+      case 'GUIDE':
+        return <Guide />;
       case 'PROFILE':
         return <Profile pet={pet!} onUpdatePet={handleUpdatePet} onResetPet={handleResetPet} />;
       default:

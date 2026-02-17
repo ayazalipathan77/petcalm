@@ -32,7 +32,7 @@ export const Sounds: React.FC = () => {
     saveFavorites(updated);
   };
 
-  const categories = ['All', 'Favorites', 'Nature', 'White Noise', 'Specialized'];
+  const categories = ['All', 'Favorites', 'Nature', 'Classical', 'White Noise', 'Specialized'];
   const speeds = [0.5, 1.0, 1.25, 1.5];
   const timerOptions = [null, 15, 30, 60];
 

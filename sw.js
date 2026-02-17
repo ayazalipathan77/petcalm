@@ -1,6 +1,6 @@
 // Service Worker for PetCalm Offline Capability
 
-const CACHE_NAME = 'petcalm-audio-cache-v2';
+const CACHE_NAME = 'petcalm-audio-cache-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -9,6 +9,8 @@ const ASSETS_TO_CACHE = [
   '/sounds/forest-birds.mp3',
   '/sounds/ocean-waves.mp3',
   '/sounds/creek-water.mp3',
+  '/sounds/heartbeat.mp3',
+  '/sounds/soft-piano.mp3',
 ];
 
 self.addEventListener('install', (event) => {

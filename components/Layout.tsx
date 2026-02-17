@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { Home, Music, BookOpen, BarChart2, User, AlertCircle } from 'lucide-react';
+import { Home, Music, BookOpen, BarChart2, User, AlertCircle, Heart } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,6 +15,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigat
     { id: 'SOUNDS', icon: Music, label: 'Sounds' },
     { id: 'TRAINING', icon: BookOpen, label: 'Training' },
     { id: 'LOG', icon: BarChart2, label: 'Log' },
+    { id: 'GUIDE', icon: Heart, label: 'Guide' },
     { id: 'PROFILE', icon: User, label: 'Profile' },
   ];
 

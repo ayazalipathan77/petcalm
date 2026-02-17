@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { Incident } from '../types';
-import { MOCK_INCIDENTS, TRIGGERS } from '../constants';
+import { TRIGGERS } from '../constants';
 import { Button } from '../components/ui/Button';
 import { getBehaviorAnalysis } from '../services/geminiService';
-import { Plus, BarChart2, Calendar, BrainCircuit } from 'lucide-react';
+import { Plus, BarChart2, Calendar, BrainCircuit, Trash2, Pencil } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useIncidents } from '../services/db';
 
-export const BehaviorLog: React.FC = () => {
-  const [incidents, setIncidents] = useState<Incident[]>(MOCK_INCIDENTS);
+interface BehaviorLogProps {
+  petName: string;
+}
+
+export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName }) => {
+  const { incidents, addIncident, updateIncident, deleteIncident } = useIncidents();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -18,24 +24,39 @@ export const BehaviorLog: React.FC = () => {
   const [newNotes, setNewNotes] = useState('');
 
   const handleSave = () => {
-    const newIncident: Incident = {
-      id: Math.random().toString(),
-      date: new Date().toISOString(),
-      trigger: newTrigger,
-      severity: newSeverity,
-      notes: newNotes
-    };
-    setIncidents([newIncident, ...incidents]);
+    if (editingIncident) {
+      updateIncident({ ...editingIncident, trigger: newTrigger, severity: newSeverity, notes: newNotes });
+      setEditingIncident(null);
+    } else {
+      addIncident({
+        id: Math.random().toString(),
+        date: new Date().toISOString(),
+        trigger: newTrigger,
+        severity: newSeverity,
+        notes: newNotes
+      });
+    }
     setShowAddModal(false);
-    // Reset form
     setNewSeverity(3);
     setNewTrigger(TRIGGERS[0]);
     setNewNotes('');
   };
 
+  const handleEdit = (incident: Incident) => {
+    setEditingIncident(incident);
+    setNewTrigger(incident.trigger);
+    setNewSeverity(incident.severity);
+    setNewNotes(incident.notes);
+    setShowAddModal(true);
+  };
+
+  const handleDelete = (id: string) => {
+    deleteIncident(id);
+  };
+
   const handleAiAnalysis = async () => {
     setIsAnalyzing(true);
-    const result = await getBehaviorAnalysis(incidents, "Luna");
+    const result = await getBehaviorAnalysis(incidents, petName);
     setAiAnalysis(result);
     setIsAnalyzing(false);
   };
@@ -56,6 +77,18 @@ export const BehaviorLog: React.FC = () => {
       </div>
 
       {/* Chart */}
+      {incidents.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <span className="text-4xl">📋</span>
+          </div>
+          <h3 className="text-lg font-bold text-neutral-text mb-2">No incidents logged yet</h3>
+          <p className="text-sm text-neutral-subtext mb-6 max-w-xs">Start tracking anxiety incidents to see patterns and get AI-powered insights.</p>
+          <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
+            <Plus size={18} /> Log First Incident
+          </Button>
+        </div>
+      ) : (<>
       <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm mb-6 h-48">
         <h3 className="text-xs font-bold text-neutral-subtext uppercase tracking-wider mb-2">Severity Trend (Last 7)</h3>
         <ResponsiveContainer width="100%" height="100%">
@@ -102,21 +135,30 @@ export const BehaviorLog: React.FC = () => {
       <div className="space-y-3">
         {incidents.map(incident => (
           <div key={incident.id} className="bg-white p-4 rounded-xl border border-neutral-100 flex gap-4">
-             <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center text-white font-bold text-sm ${
+             <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
                 incident.severity >= 4 ? 'bg-status-error' : incident.severity === 3 ? 'bg-status-warning' : 'bg-status-success'
              }`}>
                 {incident.severity}
              </div>
-             <div>
+             <div className="flex-1 min-w-0">
                <div className="flex items-center gap-2">
                  <h4 className="font-bold text-neutral-text">{incident.trigger}</h4>
                  <span className="text-[10px] text-neutral-400">{new Date(incident.date).toLocaleDateString()}</span>
                </div>
                <p className="text-sm text-neutral-subtext mt-1">{incident.notes}</p>
              </div>
+             <div className="flex flex-col gap-2 flex-shrink-0">
+               <button onClick={() => handleEdit(incident)} className="p-1.5 text-neutral-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10">
+                 <Pencil size={14} />
+               </button>
+               <button onClick={() => handleDelete(incident.id)} className="p-1.5 text-neutral-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50">
+                 <Trash2 size={14} />
+               </button>
+             </div>
           </div>
         ))}
       </div>
+      </>)}
 
       {/* Add Modal Overlay */}
       {showAddModal && (
@@ -125,14 +167,14 @@ export const BehaviorLog: React.FC = () => {
             
             {/* Modal Header */}
             <div className="p-6 pb-2 flex-shrink-0">
-               <h2 className="text-xl font-bold">Log Incident</h2>
+               <h2 className="text-xl font-bold">{editingIncident ? 'Edit Incident' : 'Log Incident'}</h2>
             </div>
 
             {/* Scrollable Content */}
             <div className="p-6 py-2 overflow-y-auto flex-1 min-h-0">
                 <label className="block text-sm text-neutral-subtext mb-2">Trigger</label>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {TRIGGERS.slice(0, 5).map(t => (
+                  {TRIGGERS.map(t => (
                     <button 
                       key={t}
                       onClick={() => setNewTrigger(t)}
@@ -171,7 +213,7 @@ export const BehaviorLog: React.FC = () => {
             {/* Modal Footer (Sticky) */}
             <div className="p-6 pt-4 flex-shrink-0 bg-white border-t border-neutral-100 pb-8 sm:pb-6">
                 <div className="flex gap-3">
-                  <Button variant="ghost" fullWidth onClick={() => setShowAddModal(false)}>Cancel</Button>
+                  <Button variant="ghost" fullWidth onClick={() => { setShowAddModal(false); setEditingIncident(null); setNewSeverity(3); setNewTrigger(TRIGGERS[0]); setNewNotes(''); }}>Cancel</Button>
                   <Button fullWidth onClick={handleSave}>Save Log</Button>
                 </div>
             </div>

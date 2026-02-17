@@ -28,7 +28,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigat
       {/* Floating Panic Button (Visible unless in panic mode - handled by parent) */}
       <div className="absolute bottom-24 right-4 z-40">
         <button
-          onClick={onPanic}
+          onClick={() => { if (navigator.vibrate) navigator.vibrate(200); onPanic(); }}
           className="w-14 h-14 bg-status-warning rounded-full shadow-xl shadow-status-warning/30 flex items-center justify-center text-white animate-bounce-slow hover:scale-105 active:scale-95 transition-transform"
           aria-label="Panic Button"
         >

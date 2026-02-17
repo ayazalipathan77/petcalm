@@ -1,13 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Volume2 } from 'lucide-react';
+import { MOCK_SOUNDS } from '../constants';
+import { isGeneratedNoise } from '../services/audioEngine';
 
 interface PanicModeProps {
   onExit: () => void;
+  petName: string;
 }
 
-export const PanicMode: React.FC<PanicModeProps> = ({ onExit }) => {
+export const PanicMode: React.FC<PanicModeProps> = ({ onExit, petName }) => {
   const [stage, setStage] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
   const [counter, setCounter] = useState(4);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Play calming audio on mount - use first file-based Nature sound
+  useEffect(() => {
+    const calmSound = MOCK_SOUNDS.find(s => s.category === 'Nature' && !isGeneratedNoise(s.url)) || MOCK_SOUNDS[0];
+    const audio = new Audio(calmSound.url);
+    audio.loop = true;
+    audio.volume = 0.8;
+    audioRef.current = audio;
+    audio.play().catch(() => {});
+    return () => { audio.pause(); audioRef.current = null; };
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -40,7 +55,7 @@ export const PanicMode: React.FC<PanicModeProps> = ({ onExit }) => {
       </div>
 
       <div className="flex flex-col items-center text-center">
-        <h2 className="text-3xl font-bold mb-8">Breathe with Luna</h2>
+        <h2 className="text-3xl font-bold mb-8">Breathe with {petName}</h2>
         
         {/* Breathing Animation Circle */}
         <div className="relative flex items-center justify-center mb-12">
@@ -65,7 +80,7 @@ export const PanicMode: React.FC<PanicModeProps> = ({ onExit }) => {
            <Volume2 size={24} />
         </div>
         <div>
-          <p className="font-bold text-lg">Playing: Rescue Calm</p>
+          <p className="font-bold text-lg">Playing: {(MOCK_SOUNDS.find(s => s.category === 'Nature') || MOCK_SOUNDS[0]).title}</p>
           <p className="text-white/70 text-sm">Volume set to 80%</p>
         </div>
       </div>

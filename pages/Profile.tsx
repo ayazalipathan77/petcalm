@@ -1,21 +1,24 @@
 import React, { useState, useRef } from 'react';
 import { Pet } from '../types';
 import { Button } from '../components/ui/Button';
-import { Camera, Save, Check } from 'lucide-react';
+import { Camera, Save, Check, Trash2 } from 'lucide-react';
 import { TRIGGERS } from '../constants';
 
 interface ProfileProps {
   pet: Pet;
   onUpdatePet: (pet: Pet) => void;
+  onResetPet: () => void;
 }
 
 const AVATARS = [
   '🐶', '🐱', '🐕', '🐈', '🐩', '🐾', '🐺', '🦊', '🦁', '🐯'
 ];
 
-export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet }) => {
+export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet }) => {
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [name, setName] = useState(pet.name);
   const [breed, setBreed] = useState(pet.breed);
+  const [age, setAge] = useState(pet.age);
   const [photoUrl, setPhotoUrl] = useState(pet.photoUrl || '');
   const [triggers, setTriggers] = useState<string[]>(pet.triggers || []);
   const [showSaved, setShowSaved] = useState(false);
@@ -45,6 +48,7 @@ export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet }) => {
       ...pet,
       name,
       breed,
+      age,
       photoUrl,
       triggers
     });
@@ -115,10 +119,21 @@ export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet }) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-subtext mb-1">Breed</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={breed}
                 onChange={(e) => setBreed(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-subtext mb-1">Age (months)</label>
+              <input
+                type="number"
+                min="1"
+                max="300"
+                value={age}
+                onChange={(e) => setAge(Number(e.target.value) || 0)}
                 className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
               />
             </div>
@@ -145,6 +160,23 @@ export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet }) => {
                 )
               })}
             </div>
+          </section>
+
+          {/* Reset / Start Over */}
+          <section className="pt-4 border-t border-neutral-200">
+            {!showResetConfirm ? (
+              <button onClick={() => setShowResetConfirm(true)} className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 transition-colors">
+                <Trash2 size={16} /> Reset Pet & Start Over
+              </button>
+            ) : (
+              <div className="bg-red-50 p-4 rounded-xl border border-red-200">
+                <p className="text-sm text-red-700 font-medium mb-3">This will delete all data including logs, training progress, moods, schedule, and reminders. This cannot be undone.</p>
+                <div className="flex gap-3">
+                  <Button variant="ghost" fullWidth onClick={() => setShowResetConfirm(false)}>Cancel</Button>
+                  <button onClick={onResetPet} className="flex-1 py-2 bg-red-500 text-white rounded-xl font-medium text-sm hover:bg-red-600 transition-colors">Delete Everything</button>
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </div>

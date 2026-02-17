@@ -14,6 +14,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     name: '',
     type: 'dog',
     breed: '',
+    age: 24,
     triggers: []
   });
 
@@ -22,7 +23,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     else {
       onComplete({
         id: Math.random().toString(36).substr(2, 9),
-        age: 24,
         ...formData
       } as Pet);
     }
@@ -96,12 +96,24 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-subtext mb-1">Breed (Optional)</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={formData.breed}
                   onChange={(e) => setFormData({...formData, breed: e.target.value})}
                   className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   placeholder="e.g. Golden Retriever"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-subtext mb-1">Age (months)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="300"
+                  value={formData.age || ''}
+                  onChange={(e) => setFormData({...formData, age: Number(e.target.value) || 0})}
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="e.g. 24"
                 />
               </div>
             </div>

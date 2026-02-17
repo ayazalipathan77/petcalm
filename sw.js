@@ -1,11 +1,14 @@
 // Service Worker for PetCalm Offline Capability
 
-const CACHE_NAME = 'petcalm-audio-cache-v1';
+const CACHE_NAME = 'petcalm-audio-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  // Note: We don't hardcode the mp3s here to avoid massive initial load.
-  // We cache them dynamically as the user plays them (Stale-While-Revalidate).
+  // Pre-cache local sound files for true offline support
+  '/sounds/gentle-rain.mp3',
+  '/sounds/forest-birds.mp3',
+  '/sounds/ocean-waves.mp3',
+  '/sounds/creek-water.mp3',
 ];
 
 self.addEventListener('install', (event) => {
@@ -14,21 +17,32 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  // Clean up old caches
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      );
+    })
+  );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
   // Strategy for Audio Files: Cache First, Fallback to Network
-  // We identify audio files by extension or the specific CDN domain
-  if (requestUrl.pathname.endsWith('.mp3') || requestUrl.hostname.includes('pixabay')) {
+  if (requestUrl.pathname.endsWith('.mp3') || requestUrl.pathname.startsWith('/sounds/')) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         if (cachedResponse) {
           return cachedResponse;
         }
         return fetch(event.request).then((networkResponse) => {
-          // Clone response to put in cache
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);

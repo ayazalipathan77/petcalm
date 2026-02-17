@@ -13,50 +13,80 @@ export const TRIGGERS = [
 ];
 
 export const MOCK_SOUNDS: Sound[] = [
-  { 
-    id: '1', 
-    title: 'Gentle Rain & White Noise', 
-    category: 'Nature', 
-    duration: 1800, 
-    isPremium: false, 
+  // --- Nature (self-hosted MP3s) ---
+  {
+    id: '1',
+    title: 'Gentle Rain',
+    category: 'Nature',
+    duration: 1800,
+    isPremium: false,
     color: 'bg-blue-100',
-    url: 'https://cdn.pixabay.com/download/audio/2022/05/17/audio_031f085732.mp3?filename=rain-and-thunder-16705.mp3' 
+    url: '/sounds/gentle-rain.mp3'
   },
-  { 
-    id: '2', 
-    title: 'Calm Piano for Paws', 
-    category: 'Classical', 
-    duration: 1200, 
-    isPremium: false, 
-    color: 'bg-amber-100',
-    url: 'https://cdn.pixabay.com/download/audio/2022/02/10/audio_5b30612143.mp3?filename=piano-moment-11656.mp3'
-  },
-  { 
-    id: '3', 
-    title: 'Box Fan (Brown Noise)', 
-    category: 'Specialized', 
-    duration: 3600, 
-    isPremium: true, 
-    color: 'bg-rose-100',
-    url: 'https://cdn.pixabay.com/download/audio/2022/11/04/audio_c35272a76f.mp3?filename=brown-noise-12543.mp3'
-  },
-  { 
-    id: '4', 
-    title: 'Forest Breeze', 
-    category: 'Nature', 
-    duration: 2400, 
-    isPremium: false, 
+  {
+    id: '4',
+    title: 'Forest Birds',
+    category: 'Nature',
+    duration: 2400,
+    isPremium: false,
     color: 'bg-emerald-100',
-    url: 'https://cdn.pixabay.com/download/audio/2021/09/06/audio_07885d5360.mp3?filename=forest-birds-6762.mp3'
+    url: '/sounds/forest-birds.mp3'
   },
-  { 
-    id: '5', 
-    title: 'Deep Sleep Frequencies', 
-    category: 'Specialized', 
-    duration: 5000, 
-    isPremium: true, 
+  {
+    id: '7',
+    title: 'Ocean Waves',
+    category: 'Nature',
+    duration: 2400,
+    isPremium: false,
+    color: 'bg-cyan-100',
+    url: '/sounds/ocean-waves.mp3'
+  },
+  {
+    id: '8',
+    title: 'Creek Water',
+    category: 'Nature',
+    duration: 3600,
+    isPremium: false,
+    color: 'bg-teal-100',
+    url: '/sounds/creek-water.mp3'
+  },
+  // --- White Noise (generated via Web Audio API) ---
+  {
+    id: '9',
+    title: 'Pure White Noise',
+    category: 'White Noise',
+    duration: 9999,
+    isPremium: false,
+    color: 'bg-gray-100',
+    url: 'generate:white'
+  },
+  {
+    id: '3',
+    title: 'Brown Noise (Deep)',
+    category: 'White Noise',
+    duration: 9999,
+    isPremium: false,
+    color: 'bg-rose-100',
+    url: 'generate:brown'
+  },
+  {
+    id: '10',
+    title: 'Pink Noise (Soft)',
+    category: 'White Noise',
+    duration: 9999,
+    isPremium: false,
+    color: 'bg-pink-100',
+    url: 'generate:pink'
+  },
+  // --- Specialized (generated) ---
+  {
+    id: '5',
+    title: 'Deep Sleep Frequencies',
+    category: 'Specialized',
+    duration: 9999,
+    isPremium: false,
     color: 'bg-purple-100',
-    url: 'https://cdn.pixabay.com/download/audio/2022/03/09/audio_c8c8a73467.mp3?filename=meditation-10657.mp3'
+    url: 'generate:brown'
   },
 ];
 
@@ -122,6 +152,23 @@ export const MOCK_PROGRAMS: TrainingProgram[] = [
       { id: 4, title: 'Around the Block', description: 'Drive around one block. Return home immediately.', duration: '2 mins', tip: 'End the trip before nausea sets in.' }
     ]
   },
+];
+
+export const DAILY_TIPS = [
+  'Playing white noise 15 minutes before a known trigger (like fireworks) can significantly reduce peak anxiety.',
+  'Short, positive training sessions (5 minutes) are more effective than long ones. End on a success.',
+  'A tired pet is a calm pet. Regular exercise before stressful events can lower baseline anxiety.',
+  'Never punish anxious behavior — it increases fear. Reward calm behavior instead.',
+  'Create a "safe space" your pet can retreat to. Let them choose when to use it.',
+  'Consistency is key. Practice desensitization exercises at the same time each day.',
+  'Frozen Kong toys stuffed with peanut butter can redirect anxiety into a positive activity.',
+  'Classical music at low volume has been shown to reduce cortisol levels in dogs.',
+  'Avoid comforting with excessive petting during panic — it can reinforce the fear response.',
+  'Thundershirts and pressure wraps can reduce anxiety by up to 80% in some pets.',
+  'Gradual exposure works. Increase trigger intensity by only 5-10% per session.',
+  'Keep your own energy calm. Pets mirror their owner\'s emotional state.',
+  'Scatter feeding (hiding kibble around the house) engages the brain and reduces stress.',
+  'If your pet hides during storms, let them. Forcing them out increases panic.',
 ];
 
 export const MOCK_INCIDENTS: Incident[] = [

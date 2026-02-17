@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { ScheduleItem } from '../types';
 import { Pet, ViewState } from '../types';
-import { Bell, Music, Play, AlertCircle, Calendar } from 'lucide-react';
+import { Bell, Music, Play, Calendar, Plus, X, BookOpen, Footprints, Stethoscope, UtensilsCrossed } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { DAILY_TIPS } from '../constants';
+import { useMoodLogs, useSchedule, useReminders } from '../services/db';
 
 interface HomeProps {
   pet: Pet;
@@ -10,7 +13,70 @@ interface HomeProps {
 }
 
 export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  // Dexie hooks
+  const { moodLogs, saveMood } = useMoodLogs();
+  const { items: schedule, addItem: addScheduleItem, removeItem: removeScheduleItem } = useSchedule();
+  const { reminders, saveReminder, deleteReminder, toggleReminder } = useReminders();
+
+  const todayLog = moodLogs.find(l => l.date === today);
   const [mood, setMood] = useState<number | null>(null);
+  // Sync mood from loaded data
+  const currentMood = mood ?? todayLog?.mood ?? null;
+
+  const handleMoodSelect = (value: number) => {
+    if (navigator.vibrate) navigator.vibrate(50);
+    setMood(value);
+    saveMood({ date: today, mood: value as 1|2|3|4|5 });
+  };
+
+  const [showAddSchedule, setShowAddSchedule] = useState(false);
+  const [newTime, setNewTime] = useState('09:00');
+  const [newLabel, setNewLabel] = useState('');
+  const [newIcon, setNewIcon] = useState<ScheduleItem['icon']>('training');
+
+  const handleAddScheduleItem = () => {
+    if (!newLabel.trim()) return;
+    const item: ScheduleItem = { id: Math.random().toString(), time: newTime, label: newLabel, icon: newIcon };
+    addScheduleItem(item);
+    setShowAddSchedule(false);
+    setNewLabel('');
+    setNewTime('09:00');
+    setNewIcon('training');
+  };
+
+  const scheduleIconMap: Record<ScheduleItem['icon'], { bg: string; color: string; Icon: any }> = {
+    training: { bg: 'bg-orange-100', color: 'text-orange-600', Icon: BookOpen },
+    sound: { bg: 'bg-blue-100', color: 'text-blue-600', Icon: Music },
+    walk: { bg: 'bg-green-100', color: 'text-green-600', Icon: Footprints },
+    vet: { bg: 'bg-rose-100', color: 'text-rose-600', Icon: Stethoscope },
+    feeding: { bg: 'bg-amber-100', color: 'text-amber-600', Icon: UtensilsCrossed },
+  };
+
+  const formatTime = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${h % 12 || 12}:${m.toString().padStart(2, '0')} ${ampm}`;
+  };
+
+  // Reminders UI state
+  const [showReminders, setShowReminders] = useState(false);
+  const [showAddReminder, setShowAddReminder] = useState(false);
+  const [reminderTitle, setReminderTitle] = useState('');
+  const [reminderTime, setReminderTime] = useState('09:00');
+  const [reminderDays, setReminderDays] = useState<string[]>(['Mon', 'Wed', 'Fri']);
+
+  const allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const addReminder = () => {
+    if (!reminderTitle.trim()) return;
+    saveReminder({ id: Math.random().toString(), title: reminderTitle, time: reminderTime, days: reminderDays, enabled: true });
+    setShowAddReminder(false);
+    setReminderTitle('');
+    setReminderTime('09:00');
+    setReminderDays(['Mon', 'Wed', 'Fri']);
+  };
 
   const moodEmojis = ['😰', '😕', '😐', '🙂', '😊'];
 
@@ -30,17 +96,70 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
           </div>
           <div>
             <h1 className="text-lg font-bold text-neutral-text leading-tight">{pet.name}</h1>
-            <p className="text-xs text-neutral-subtext">Good Morning!</p>
+            <p className="text-xs text-neutral-subtext">{new Date().getHours() < 12 ? 'Good Morning!' : new Date().getHours() < 17 ? 'Good Afternoon!' : 'Good Evening!'}</p>
           </div>
         </div>
-        <button className="relative p-2 text-neutral-subtext hover:text-primary transition-colors">
+        <button onClick={() => setShowReminders(true)} className="relative p-2 text-neutral-subtext hover:text-primary transition-colors">
           <Bell size={24} />
-          <span className="absolute top-1.5 right-2 w-2 h-2 bg-status-error rounded-full border border-white"></span>
+          {reminders.some(r => r.enabled) && <span className="absolute top-1.5 right-2 w-2 h-2 bg-status-error rounded-full border border-white"></span>}
         </button>
       </header>
 
+      {/* Reminders Panel */}
+      {showReminders && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center animate-fade-in sm:p-4">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl flex flex-col max-h-[85vh] animate-slide-up shadow-2xl overflow-hidden">
+            <div className="p-6 pb-3 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-neutral-text">Reminders</h2>
+              <button onClick={() => setShowReminders(false)} className="text-neutral-400 hover:text-neutral-text"><X size={20} /></button>
+            </div>
+            <div className="px-6 pb-4 overflow-y-auto flex-1">
+              {reminders.length === 0 ? (
+                <p className="text-sm text-neutral-subtext text-center py-8">No reminders yet. Add one to stay on track!</p>
+              ) : (
+                <div className="space-y-3">
+                  {reminders.map(r => (
+                    <div key={r.id} className={`p-4 rounded-xl border flex items-start gap-3 ${r.enabled ? 'border-primary/20 bg-primary/5' : 'border-neutral-200 opacity-60'}`}>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-sm text-neutral-text">{r.title}</h4>
+                        <p className="text-xs text-neutral-subtext">{formatTime(r.time)} · {r.days.join(', ')}</p>
+                      </div>
+                      <button onClick={() => toggleReminder(r.id)} className={`w-10 h-6 rounded-full relative transition-colors ${r.enabled ? 'bg-primary' : 'bg-neutral-300'}`}>
+                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${r.enabled ? 'right-1' : 'left-1'}`} />
+                      </button>
+                      <button onClick={() => deleteReminder(r.id)} className="text-neutral-400 hover:text-red-500 p-1"><X size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {!showAddReminder ? (
+              <div className="p-6 pt-3 border-t border-neutral-100">
+                <Button fullWidth onClick={() => setShowAddReminder(true)} className="flex items-center justify-center gap-2"><Plus size={16} /> Add Reminder</Button>
+              </div>
+            ) : (
+              <div className="p-6 pt-3 border-t border-neutral-100 space-y-3">
+                <input type="text" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} placeholder="e.g. Training Session" className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none text-sm" />
+                <input type="time" value={reminderTime} onChange={e => setReminderTime(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none text-sm" />
+                <div className="flex gap-1">
+                  {allDays.map(d => (
+                    <button key={d} onClick={() => setReminderDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${reminderDays.includes(d) ? 'bg-primary text-white' : 'bg-neutral-100 text-neutral-400'}`}>
+                      {d.charAt(0)}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="ghost" fullWidth onClick={() => setShowAddReminder(false)}>Cancel</Button>
+                  <Button fullWidth onClick={addReminder} disabled={!reminderTitle.trim()}>Save</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="p-6 space-y-6">
-        
+
         {/* Daily Status */}
         <section className="bg-gradient-to-br from-primary-light/20 to-white p-5 rounded-2xl border border-primary/10 shadow-sm">
           <h2 className="text-sm font-semibold text-neutral-text mb-3">How is {pet.name} feeling?</h2>
@@ -48,10 +167,10 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
             {moodEmojis.map((emoji, index) => (
               <button
                 key={index}
-                onClick={() => setMood(index + 1)}
+                onClick={() => handleMoodSelect(index + 1)}
                 className={`text-2xl p-2 rounded-full transition-all transform ${
-                  mood === index + 1 
-                    ? 'bg-white shadow-md scale-125' 
+                  currentMood === index + 1
+                    ? 'bg-white shadow-md scale-125'
                     : 'hover:bg-white/50 hover:scale-110 grayscale opacity-70 hover:grayscale-0 hover:opacity-100'
                 }`}
               >
@@ -59,11 +178,32 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
               </button>
             ))}
           </div>
+          {moodLogs.length > 1 && (
+            <div className="mt-3 pt-3 border-t border-primary/10">
+              <p className="text-[10px] text-neutral-subtext uppercase tracking-wider font-bold mb-2">Last 7 Days</p>
+              <div className="flex gap-1 items-end">
+                {Array.from({ length: 7 }).map((_, i) => {
+                  const d = new Date(); d.setDate(d.getDate() - (6 - i));
+                  const key = d.toISOString().split('T')[0];
+                  const log = moodLogs.find(l => l.date === key);
+                  return (
+                    <div key={key} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        className={`w-full rounded-sm transition-all ${log ? 'bg-primary' : 'bg-neutral-200'}`}
+                        style={{ height: log ? `${log.mood * 6}px` : '4px' }}
+                      />
+                      <span className="text-[8px] text-neutral-400">{d.toLocaleDateString('en-US', { weekday: 'narrow' })}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Quick Actions Grid */}
         <section className="grid grid-cols-2 gap-4">
-          <button 
+          <button
             onClick={() => onNavigate('SOUNDS')}
             className="p-4 bg-secondary/10 rounded-2xl flex flex-col items-center justify-center gap-2 border border-secondary/20 active:scale-95 transition-all"
           >
@@ -73,8 +213,8 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
             </div>
             <span className="font-semibold text-secondary-dark">Calming Sounds</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => onNavigate('TRAINING')}
             className="p-4 bg-accent/10 rounded-2xl flex flex-col items-center justify-center gap-2 border border-accent/20 active:scale-95 transition-all"
           >
@@ -89,24 +229,71 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
         <section>
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-lg font-bold text-neutral-text">Today's Schedule</h2>
-            <button className="text-xs font-semibold text-primary uppercase tracking-wider">See All</button>
+            <button onClick={() => setShowAddSchedule(true)} className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
+              <Plus size={12} /> Add
+            </button>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 hide-scrollbar">
-            <div className="min-w-[140px] p-4 bg-white rounded-xl border border-neutral-100 shadow-sm flex flex-col gap-2">
-              <span className="text-xs font-bold text-neutral-subtext">09:00 AM</span>
-              <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                <Calendar size={16} />
-              </div>
-              <p className="font-semibold text-sm">Morning Training</p>
+          {schedule.length === 0 ? (
+            <div className="bg-white/50 border border-dashed border-neutral-300 rounded-xl p-6 text-center">
+              <p className="text-sm text-neutral-subtext mb-2">No activities scheduled</p>
+              <button onClick={() => setShowAddSchedule(true)} className="text-xs font-bold text-primary">+ Add your first activity</button>
             </div>
-             <div className="min-w-[140px] p-4 bg-white rounded-xl border border-neutral-100 shadow-sm flex flex-col gap-2">
-              <span className="text-xs font-bold text-neutral-subtext">02:00 PM</span>
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                <Music size={16} />
-              </div>
-              <p className="font-semibold text-sm">Sound Therapy</p>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 hide-scrollbar">
+              {schedule.map(item => {
+                const { bg, color, Icon } = scheduleIconMap[item.icon];
+                return (
+                  <div key={item.id} className="min-w-[140px] p-4 bg-white rounded-xl border border-neutral-100 shadow-sm flex flex-col gap-2 relative group">
+                    <button onClick={() => removeScheduleItem(item.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-red-500 transition-all">
+                      <X size={14} />
+                    </button>
+                    <span className="text-xs font-bold text-neutral-subtext">{formatTime(item.time)}</span>
+                    <div className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center ${color}`}>
+                      <Icon size={16} />
+                    </div>
+                    <p className="font-semibold text-sm">{item.label}</p>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
+
+          {/* Add Schedule Modal */}
+          {showAddSchedule && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center animate-fade-in sm:p-4">
+              <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 animate-slide-up shadow-2xl">
+                <h3 className="text-lg font-bold text-neutral-text mb-4">Add Activity</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-neutral-subtext mb-1">Time</label>
+                    <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-neutral-subtext mb-1">Activity</label>
+                    <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="e.g. Morning Walk" className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-neutral-subtext mb-2">Type</label>
+                    <div className="flex gap-2">
+                      {(Object.keys(scheduleIconMap) as ScheduleItem['icon'][]).map(key => {
+                        const { bg, color, Icon } = scheduleIconMap[key];
+                        return (
+                          <button key={key} onClick={() => setNewIcon(key)} className={`flex-1 p-2 rounded-xl flex flex-col items-center gap-1 border-2 transition-all ${newIcon === key ? 'border-primary bg-primary/5' : 'border-neutral-200'}`}>
+                            <div className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center ${color}`}><Icon size={14} /></div>
+                            <span className="text-[10px] capitalize">{key}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <Button variant="ghost" fullWidth onClick={() => setShowAddSchedule(false)}>Cancel</Button>
+                  <Button fullWidth onClick={handleAddScheduleItem} disabled={!newLabel.trim()}>Add</Button>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Tip of the Day */}
@@ -116,7 +303,7 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
               <span className="bg-white text-accent-dark text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Tip</span>
             </div>
             <p className="text-sm text-neutral-text font-medium leading-relaxed">
-              Playing white noise 15 minutes before a known trigger (like fireworks) can significantly reduce peak anxiety.
+              {DAILY_TIPS[Math.floor(Date.now() / 86400000) % DAILY_TIPS.length]}
             </p>
           </div>
           <div className="absolute -bottom-4 -right-4 text-accent opacity-20">

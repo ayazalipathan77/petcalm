@@ -1,12 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MOCK_PROGRAMS } from '../constants';
 import { TrainingProgram } from '../types';
 import { ChevronRight, Sparkles, Home, Car, Lock, CheckCircle, ArrowLeft, Info, Leaf, PlayCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { useSetting } from '../services/db';
 
 export const Training: React.FC = () => {
   const [selectedProgram, setSelectedProgram] = useState<TrainingProgram | null>(null);
-  const [localPrograms, setLocalPrograms] = useState(MOCK_PROGRAMS);
+  const { value: savedProgress, save: saveProgress, loaded } = useSetting<Record<string, number>>('training_progress', {});
+
+  const [localPrograms, setLocalPrograms] = useState<TrainingProgram[]>(MOCK_PROGRAMS);
+
+  // Apply saved progress once loaded from IndexedDB
+  useEffect(() => {
+    if (loaded && Object.keys(savedProgress).length > 0) {
+      setLocalPrograms(MOCK_PROGRAMS.map(p => ({
+        ...p,
+        completedStepIndex: savedProgress[p.id] ?? p.completedStepIndex
+      })));
+    }
+  }, [loaded, savedProgress]);
 
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -19,10 +32,9 @@ export const Training: React.FC = () => {
   };
 
   const handleCompleteStep = (programId: string, stepIndex: number) => {
-    // In a real app, this would save to backend
+    if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
     const updated = localPrograms.map(p => {
       if (p.id === programId) {
-        // Only advance if we are completing the current active step
         const newIndex = stepIndex === p.completedStepIndex ? p.completedStepIndex + 1 : p.completedStepIndex;
         const updatedProgram = { ...p, completedStepIndex: newIndex };
         if (selectedProgram?.id === programId) setSelectedProgram(updatedProgram);
@@ -31,6 +43,10 @@ export const Training: React.FC = () => {
       return p;
     });
     setLocalPrograms(updated);
+    // Persist to IndexedDB
+    const progress: Record<string, number> = {};
+    updated.forEach(p => { progress[p.id] = p.completedStepIndex; });
+    saveProgress(progress);
   };
 
   if (selectedProgram) {

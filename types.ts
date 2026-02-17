@@ -51,3 +51,18 @@ export interface MoodLog {
   date: string;
   mood: 1 | 2 | 3 | 4 | 5; // 1 = Anxious, 5 = Calm
 }
+
+export interface ScheduleItem {
+  id: string;
+  time: string; // HH:MM format
+  label: string;
+  icon: 'training' | 'sound' | 'walk' | 'vet' | 'feeding';
+}
+
+export interface Reminder {
+  id: string;
+  title: string;
+  time: string; // HH:MM format
+  days: string[]; // e.g. ['Mon', 'Wed', 'Fri']
+  enabled: boolean;
+}

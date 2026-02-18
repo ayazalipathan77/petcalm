@@ -8,6 +8,7 @@ import { BehaviorLog } from './pages/BehaviorLog';
 import { PanicMode } from './pages/PanicMode';
 import { Profile } from './pages/Profile';
 import { Guide } from './pages/Guide';
+import { Privacy } from './pages/Privacy';
 import { ViewState, Pet } from './types';
 import { usePet, migrateFromLocalStorage } from './services/db';
 
@@ -67,7 +68,9 @@ const App: React.FC = () => {
       case 'GUIDE':
         return <Guide />;
       case 'PROFILE':
-        return <Profile pet={pet!} onUpdatePet={handleUpdatePet} onResetPet={handleResetPet} />;
+        return <Profile pet={pet!} onUpdatePet={handleUpdatePet} onResetPet={handleResetPet} onNavigate={setView} />;
+      case 'PRIVACY':
+        return <Privacy />;
       default:
         return null;
     }

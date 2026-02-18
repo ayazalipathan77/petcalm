@@ -1,4 +1,4 @@
-export type ViewState = 'ONBOARDING' | 'HOME' | 'SOUNDS' | 'TRAINING' | 'LOG' | 'GUIDE' | 'PROFILE';
+export type ViewState = 'ONBOARDING' | 'HOME' | 'SOUNDS' | 'TRAINING' | 'LOG' | 'GUIDE' | 'PROFILE' | 'PRIVACY';
 
 export interface Pet {
   id: string;

@@ -1,20 +1,21 @@
 import React, { useState, useRef } from 'react';
-import { Pet } from '../types';
+import { Pet, ViewState } from '../types';
 import { Button } from '../components/ui/Button';
-import { Camera, Save, Check, Trash2 } from 'lucide-react';
+import { Camera, Save, Check, Trash2, Shield } from 'lucide-react';
 import { TRIGGERS } from '../constants';
 
 interface ProfileProps {
   pet: Pet;
   onUpdatePet: (pet: Pet) => void;
   onResetPet: () => void;
+  onNavigate: (view: ViewState) => void;
 }
 
 const AVATARS = [
   '🐶', '🐱', '🐕', '🐈', '🐩', '🐾', '🐺', '🦊', '🦁', '🐯'
 ];
 
-export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet }) => {
+export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet, onNavigate }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [name, setName] = useState(pet.name);
   const [breed, setBreed] = useState(pet.breed);
@@ -160,6 +161,16 @@ export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet }
                 )
               })}
             </div>
+          </section>
+
+          {/* Privacy & Legal */}
+          <section className="pt-4 border-t border-neutral-200">
+            <button
+              onClick={() => onNavigate('PRIVACY')}
+              className="flex items-center gap-2 text-sm text-neutral-subtext hover:text-primary transition-colors"
+            >
+              <Shield size={16} /> Privacy Policy
+            </button>
           </section>
 
           {/* Reset / Start Over */}

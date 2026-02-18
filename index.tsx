@@ -1,6 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
+
+// Global unhandled promise rejection handler
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[PetCalm] Unhandled promise rejection:', event.reason);
+});
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -10,6 +16,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 );

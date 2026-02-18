@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScheduleItem } from '../types';
 import { Pet, ViewState } from '../types';
 import { Bell, Music, Play, Calendar, Plus, X, BookOpen, Footprints, Stethoscope, UtensilsCrossed } from 'lucide-react';
@@ -6,6 +6,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { Button } from '../components/ui/Button';
 import { DAILY_TIPS } from '../constants';
 import { useMoodLogs, useSchedule, useReminders } from '../services/db';
+import { requestNotificationPermission, scheduleReminder, cancelReminder } from '../services/notifications';
 
 interface HomeProps {
   pet: Pet;
@@ -61,6 +62,9 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
     return `${h % 12 || 12}:${m.toString().padStart(2, '0')} ${ampm}`;
   };
 
+  // Request notification permission on mount (native only, no-op in browser)
+  useEffect(() => { requestNotificationPermission(); }, []);
+
   // Reminders UI state
   const [showReminders, setShowReminders] = useState(false);
   const [showAddReminder, setShowAddReminder] = useState(false);
@@ -72,7 +76,9 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
 
   const addReminder = () => {
     if (!reminderTitle.trim()) return;
-    saveReminder({ id: Math.random().toString(), title: reminderTitle, time: reminderTime, days: reminderDays, enabled: true });
+    const newReminder = { id: Math.random().toString(), title: reminderTitle, time: reminderTime, days: reminderDays, enabled: true };
+    saveReminder(newReminder);
+    scheduleReminder(newReminder);
     setShowAddReminder(false);
     setReminderTitle('');
     setReminderTime('09:00');
@@ -123,10 +129,13 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
                     <h4 className="font-bold text-sm text-neutral-text">{r.title}</h4>
                     <p className="text-xs text-neutral-subtext">{formatTime(r.time)} · {r.days.join(', ')}</p>
                   </div>
-                  <button onClick={() => toggleReminder(r.id)} className={`w-10 h-6 rounded-full relative transition-colors ${r.enabled ? 'bg-primary' : 'bg-neutral-300'}`}>
+                  <button onClick={() => {
+                    toggleReminder(r.id);
+                    if (r.enabled) { cancelReminder(r.id); } else { scheduleReminder({ ...r, enabled: true }); }
+                  }} className={`w-10 h-6 rounded-full relative transition-colors ${r.enabled ? 'bg-primary' : 'bg-neutral-300'}`}>
                     <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${r.enabled ? 'right-1' : 'left-1'}`} />
                   </button>
-                  <button onClick={() => deleteReminder(r.id)} className="text-neutral-400 hover:text-red-500 p-1"><X size={14} /></button>
+                  <button onClick={() => { cancelReminder(r.id); deleteReminder(r.id); }} className="text-neutral-400 hover:text-red-500 p-1"><X size={14} /></button>
                 </div>
               ))}
             </div>

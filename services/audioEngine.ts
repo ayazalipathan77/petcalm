@@ -70,24 +70,22 @@ export class NoiseGenerator {
   }
 
   private playPurr(volume: number): void {
-    // 25Hz sine wave mimicking cat purr frequency
-    const osc = this.ctx!.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = 25;
-    osc.connect(this.gainNode!);
-    osc.start();
-    this.oscillators.push(osc);
+    // Therapeutic purr: 100Hz fundamental (audible on phone speakers)
+    // with harmonics at 200Hz and 400Hz to mimic a cat's purr texture
+    const frequencies = [100, 200, 400];
+    const gains = [1.0, 0.4, 0.15];
 
-    // Add subtle harmonic at 50Hz for richer purr
-    const osc2 = this.ctx!.createOscillator();
-    osc2.type = 'sine';
-    osc2.frequency.value = 50;
-    const harmGain = this.ctx!.createGain();
-    harmGain.gain.value = 0.3;
-    osc2.connect(harmGain);
-    harmGain.connect(this.gainNode!);
-    osc2.start();
-    this.oscillators.push(osc2);
+    for (let i = 0; i < frequencies.length; i++) {
+      const osc = this.ctx!.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = frequencies[i];
+      const g = this.ctx!.createGain();
+      g.gain.value = gains[i];
+      osc.connect(g);
+      g.connect(this.gainNode!);
+      osc.start();
+      this.oscillators.push(osc);
+    }
   }
 
   private playBinaural(volume: number): void {

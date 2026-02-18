@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ScheduleItem } from '../types';
 import { Pet, ViewState } from '../types';
 import { Bell, Music, Play, Calendar, Plus, X, BookOpen, Footprints, Stethoscope, UtensilsCrossed } from 'lucide-react';
+import { BottomSheet } from '../components/BottomSheet';
 import { Button } from '../components/ui/Button';
 import { DAILY_TIPS } from '../constants';
 import { useMoodLogs, useSchedule, useReminders } from '../services/db';
@@ -106,57 +107,53 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
       </header>
 
       {/* Reminders Panel */}
-      {showReminders && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center animate-fade-in sm:p-4">
-          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl flex flex-col max-h-[85vh] animate-slide-up shadow-2xl overflow-hidden">
-            <div className="p-6 pb-3 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-neutral-text">Reminders</h2>
-              <button onClick={() => setShowReminders(false)} className="text-neutral-400 hover:text-neutral-text"><X size={20} /></button>
-            </div>
-            <div className="px-6 pb-4 overflow-y-auto flex-1">
-              {reminders.length === 0 ? (
-                <p className="text-sm text-neutral-subtext text-center py-8">No reminders yet. Add one to stay on track!</p>
-              ) : (
-                <div className="space-y-3">
-                  {reminders.map(r => (
-                    <div key={r.id} className={`p-4 rounded-xl border flex items-start gap-3 ${r.enabled ? 'border-primary/20 bg-primary/5' : 'border-neutral-200 opacity-60'}`}>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-sm text-neutral-text">{r.title}</h4>
-                        <p className="text-xs text-neutral-subtext">{formatTime(r.time)} · {r.days.join(', ')}</p>
-                      </div>
-                      <button onClick={() => toggleReminder(r.id)} className={`w-10 h-6 rounded-full relative transition-colors ${r.enabled ? 'bg-primary' : 'bg-neutral-300'}`}>
-                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${r.enabled ? 'right-1' : 'left-1'}`} />
-                      </button>
-                      <button onClick={() => deleteReminder(r.id)} className="text-neutral-400 hover:text-red-500 p-1"><X size={14} /></button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {!showAddReminder ? (
-              <div className="p-6 pt-3 border-t border-neutral-100">
-                <Button fullWidth onClick={() => setShowAddReminder(true)} className="flex items-center justify-center gap-2"><Plus size={16} /> Add Reminder</Button>
-              </div>
-            ) : (
-              <div className="p-6 pt-3 border-t border-neutral-100 space-y-3">
-                <input type="text" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} placeholder="e.g. Training Session" className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none text-sm" />
-                <input type="time" value={reminderTime} onChange={e => setReminderTime(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none text-sm" />
-                <div className="flex gap-1">
-                  {allDays.map(d => (
-                    <button key={d} onClick={() => setReminderDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${reminderDays.includes(d) ? 'bg-primary text-white' : 'bg-neutral-100 text-neutral-400'}`}>
-                      {d.charAt(0)}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-3">
-                  <Button variant="ghost" fullWidth onClick={() => setShowAddReminder(false)}>Cancel</Button>
-                  <Button fullWidth onClick={addReminder} disabled={!reminderTitle.trim()}>Save</Button>
-                </div>
-              </div>
-            )}
-          </div>
+      <BottomSheet open={showReminders} onClose={() => { setShowReminders(false); setShowAddReminder(false); }}>
+        <div className="px-6 pb-3 flex justify-between items-center flex-shrink-0">
+          <h2 className="text-xl font-bold text-neutral-text">Reminders</h2>
+          <button onClick={() => setShowReminders(false)} className="text-neutral-400 hover:text-neutral-text"><X size={20} /></button>
         </div>
-      )}
+        <div className="px-6 pb-4 overflow-y-auto flex-1">
+          {reminders.length === 0 ? (
+            <p className="text-sm text-neutral-subtext text-center py-8">No reminders yet. Add one to stay on track!</p>
+          ) : (
+            <div className="space-y-3">
+              {reminders.map(r => (
+                <div key={r.id} className={`p-4 rounded-xl border flex items-start gap-3 ${r.enabled ? 'border-primary/20 bg-primary/5' : 'border-neutral-200 opacity-60'}`}>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-sm text-neutral-text">{r.title}</h4>
+                    <p className="text-xs text-neutral-subtext">{formatTime(r.time)} · {r.days.join(', ')}</p>
+                  </div>
+                  <button onClick={() => toggleReminder(r.id)} className={`w-10 h-6 rounded-full relative transition-colors ${r.enabled ? 'bg-primary' : 'bg-neutral-300'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${r.enabled ? 'right-1' : 'left-1'}`} />
+                  </button>
+                  <button onClick={() => deleteReminder(r.id)} className="text-neutral-400 hover:text-red-500 p-1"><X size={14} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        {!showAddReminder ? (
+          <div className="px-6 pt-3 pb-8 border-t border-neutral-100 flex-shrink-0">
+            <Button fullWidth onClick={() => setShowAddReminder(true)} className="flex items-center justify-center gap-2"><Plus size={16} /> Add Reminder</Button>
+          </div>
+        ) : (
+          <div className="px-6 pt-3 pb-8 border-t border-neutral-100 space-y-3 flex-shrink-0">
+            <input type="text" value={reminderTitle} onChange={e => setReminderTitle(e.target.value)} placeholder="e.g. Training Session" className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none text-sm" />
+            <input type="time" value={reminderTime} onChange={e => setReminderTime(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none text-sm" />
+            <div className="flex gap-1">
+              {allDays.map(d => (
+                <button key={d} onClick={() => setReminderDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${reminderDays.includes(d) ? 'bg-primary text-white' : 'bg-neutral-100 text-neutral-400'}`}>
+                  {d.charAt(0)}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <Button variant="ghost" fullWidth onClick={() => setShowAddReminder(false)}>Cancel</Button>
+              <Button fullWidth onClick={addReminder} disabled={!reminderTitle.trim()}>Save</Button>
+            </div>
+          </div>
+        )}
+      </BottomSheet>
 
       <div className="p-6 space-y-6">
 
@@ -258,42 +255,38 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
             </div>
           )}
 
-          {/* Add Schedule Modal */}
-          {showAddSchedule && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center animate-fade-in sm:p-4">
-              <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 animate-slide-up shadow-2xl">
-                <h3 className="text-lg font-bold text-neutral-text mb-4">Add Activity</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm text-neutral-subtext mb-1">Time</label>
-                    <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-neutral-subtext mb-1">Activity</label>
-                    <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="e.g. Morning Walk" className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-neutral-subtext mb-2">Type</label>
-                    <div className="flex gap-2">
-                      {(Object.keys(scheduleIconMap) as ScheduleItem['icon'][]).map(key => {
-                        const { bg, color, Icon } = scheduleIconMap[key];
-                        return (
-                          <button key={key} onClick={() => setNewIcon(key)} className={`flex-1 p-2 rounded-xl flex flex-col items-center gap-1 border-2 transition-all ${newIcon === key ? 'border-primary bg-primary/5' : 'border-neutral-200'}`}>
-                            <div className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center ${color}`}><Icon size={14} /></div>
-                            <span className="text-[10px] capitalize">{key}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-3 mt-6">
-                  <Button variant="ghost" fullWidth onClick={() => setShowAddSchedule(false)}>Cancel</Button>
-                  <Button fullWidth onClick={handleAddScheduleItem} disabled={!newLabel.trim()}>Add</Button>
+          {/* Add Schedule Sheet */}
+          <BottomSheet open={showAddSchedule} onClose={() => setShowAddSchedule(false)}>
+            <div className="px-6 pb-6 space-y-4">
+              <h3 className="text-lg font-bold text-neutral-text">Add Activity</h3>
+              <div>
+                <label className="block text-sm text-neutral-subtext mb-1">Time</label>
+                <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm text-neutral-subtext mb-1">Activity</label>
+                <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="e.g. Morning Walk" className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-white text-gray-900 focus:border-primary outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm text-neutral-subtext mb-2">Type</label>
+                <div className="flex gap-2">
+                  {(Object.keys(scheduleIconMap) as ScheduleItem['icon'][]).map(key => {
+                    const { bg, color, Icon } = scheduleIconMap[key];
+                    return (
+                      <button key={key} onClick={() => setNewIcon(key)} className={`flex-1 p-2 rounded-xl flex flex-col items-center gap-1 border-2 transition-all ${newIcon === key ? 'border-primary bg-primary/5' : 'border-neutral-200'}`}>
+                        <div className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center ${color}`}><Icon size={14} /></div>
+                        <span className="text-[10px] capitalize">{key}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+              <div className="flex gap-3 pt-2 pb-4">
+                <Button variant="ghost" fullWidth onClick={() => setShowAddSchedule(false)}>Cancel</Button>
+                <Button fullWidth onClick={handleAddScheduleItem} disabled={!newLabel.trim()}>Add</Button>
+              </div>
             </div>
-          )}
+          </BottomSheet>
         </section>
 
         {/* Tip of the Day */}

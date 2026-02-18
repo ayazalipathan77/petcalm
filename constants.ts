@@ -86,7 +86,7 @@ export const MOCK_SOUNDS: Sound[] = [
   {
     id: '11',
     title: 'Heartbeat (60 BPM)',
-    category: 'Nature',
+    category: 'Classical',
     duration: 1800,
     isPremium: false,
     color: 'bg-red-100',

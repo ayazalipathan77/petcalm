@@ -4,6 +4,7 @@ import { TRIGGERS } from '../constants';
 import { Button } from '../components/ui/Button';
 import { getBehaviorAnalysis } from '../services/geminiService';
 import { Plus, BarChart2, Calendar, BrainCircuit, Trash2, Pencil } from 'lucide-react';
+import { BottomSheet } from '../components/BottomSheet';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useIncidents } from '../services/db';
 
@@ -160,66 +161,62 @@ export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName }) => {
       </div>
       </>)}
 
-      {/* Add Modal Overlay */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center animate-fade-in sm:p-4">
-          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl flex flex-col max-h-[85vh] animate-slide-up shadow-2xl overflow-hidden">
-            
-            {/* Modal Header */}
-            <div className="p-6 pb-2 flex-shrink-0">
-               <h2 className="text-xl font-bold">{editingIncident ? 'Edit Incident' : 'Log Incident'}</h2>
-            </div>
+      {/* Add / Edit Sheet */}
+      <BottomSheet
+        open={showAddModal}
+        onClose={() => { setShowAddModal(false); setEditingIncident(null); setNewSeverity(3); setNewTrigger(TRIGGERS[0]); setNewNotes(''); }}
+      >
+        {/* Header */}
+        <div className="px-6 pb-2 flex-shrink-0">
+          <h2 className="text-xl font-bold">{editingIncident ? 'Edit Incident' : 'Log Incident'}</h2>
+        </div>
 
-            {/* Scrollable Content */}
-            <div className="p-6 py-2 overflow-y-auto flex-1 min-h-0">
-                <label className="block text-sm text-neutral-subtext mb-2">Trigger</label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {TRIGGERS.map(t => (
-                    <button 
-                      key={t}
-                      onClick={() => setNewTrigger(t)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${newTrigger === t ? 'bg-primary text-white border-primary' : 'border-neutral-200 text-neutral-600 hover:border-primary/50'}`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
+        {/* Scrollable Content */}
+        <div className="px-6 py-2 overflow-y-auto flex-1 min-h-0">
+          <label className="block text-sm text-neutral-subtext mb-2">Trigger</label>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {TRIGGERS.map(t => (
+              <button
+                key={t}
+                onClick={() => setNewTrigger(t)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${newTrigger === t ? 'bg-primary text-white border-primary' : 'border-neutral-200 text-neutral-600 hover:border-primary/50'}`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
 
-                <label className="block text-sm text-neutral-subtext mb-2">Severity (1-5)</label>
-                <div className="px-1 mb-4">
-                    <input 
-                      type="range" min="1" max="5" 
-                      value={newSeverity} 
-                      onChange={(e) => setNewSeverity(Number(e.target.value) as any)}
-                      className="w-full accent-primary mb-2 cursor-pointer"
-                    />
-                    <div className="flex justify-between text-xs text-neutral-400 font-medium">
-                      <span>Mild</span>
-                      <span>Moderate</span>
-                      <span>Panic</span>
-                    </div>
-                </div>
-
-                <label className="block text-sm text-neutral-subtext mb-2">Notes</label>
-                <textarea 
-                  className="w-full border border-neutral-200 rounded-xl p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none mb-2 bg-white text-gray-900 resize-none"
-                  rows={4}
-                  value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
-                  placeholder="What happened? (Optional)"
-                />
-            </div>
-
-            {/* Modal Footer (Sticky) */}
-            <div className="p-6 pt-4 flex-shrink-0 bg-white border-t border-neutral-100 pb-8 sm:pb-6">
-                <div className="flex gap-3">
-                  <Button variant="ghost" fullWidth onClick={() => { setShowAddModal(false); setEditingIncident(null); setNewSeverity(3); setNewTrigger(TRIGGERS[0]); setNewNotes(''); }}>Cancel</Button>
-                  <Button fullWidth onClick={handleSave}>Save Log</Button>
-                </div>
+          <label className="block text-sm text-neutral-subtext mb-2">Severity (1-5)</label>
+          <div className="px-1 mb-4">
+            <input
+              type="range" min="1" max="5"
+              value={newSeverity}
+              onChange={(e) => setNewSeverity(Number(e.target.value) as any)}
+              className="w-full accent-primary mb-2 cursor-pointer"
+            />
+            <div className="flex justify-between text-xs text-neutral-400 font-medium">
+              <span>Mild</span><span>Moderate</span><span>Panic</span>
             </div>
           </div>
+
+          <label className="block text-sm text-neutral-subtext mb-2">Notes</label>
+          <textarea
+            className="w-full border border-neutral-200 rounded-xl p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none mb-2 bg-white text-gray-900 resize-none"
+            rows={4}
+            value={newNotes}
+            onChange={(e) => setNewNotes(e.target.value)}
+            placeholder="What happened? (Optional)"
+          />
         </div>
-      )}
+
+        {/* Footer */}
+        <div className="px-6 pt-4 pb-8 flex-shrink-0 bg-white border-t border-neutral-100">
+          <div className="flex gap-3">
+            <Button variant="ghost" fullWidth onClick={() => { setShowAddModal(false); setEditingIncident(null); setNewSeverity(3); setNewTrigger(TRIGGERS[0]); setNewNotes(''); }}>Cancel</Button>
+            <Button fullWidth onClick={handleSave}>Save Log</Button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 };

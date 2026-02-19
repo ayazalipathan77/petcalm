@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Pet, ViewState } from '../types';
 import { Button } from '../components/ui/Button';
-import { Camera, Save, Check, Trash2, Shield } from 'lucide-react';
+import { Camera, Save, Check, Trash2, Shield, BookOpen } from 'lucide-react';
 import { TRIGGERS } from '../constants';
 
 interface ProfileProps {
@@ -27,13 +27,25 @@ export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet, 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoUrl(reader.result as string);
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 400;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { setPhotoUrl(reader.result as string); return; }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setPhotoUrl(canvas.toDataURL('image/jpeg', 0.8));
       };
-      reader.readAsDataURL(file);
-    }
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const toggleTrigger = (trigger: string) => {
@@ -164,7 +176,13 @@ export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet, 
           </section>
 
           {/* Privacy & Legal */}
-          <section className="pt-4 border-t border-neutral-200">
+          <section className="pt-4 border-t border-neutral-200 space-y-3">
+            <button
+              onClick={() => onNavigate('GUIDE')}
+              className="flex items-center gap-2 text-sm text-neutral-subtext hover:text-primary transition-colors"
+            >
+              <BookOpen size={16} /> Medical & Supplement Guide
+            </button>
             <button
               onClick={() => onNavigate('PRIVACY')}
               className="flex items-center gap-2 text-sm text-neutral-subtext hover:text-primary transition-colors"

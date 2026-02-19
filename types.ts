@@ -45,6 +45,7 @@ export interface Incident {
   trigger: string;
   severity: 1 | 2 | 3 | 4 | 5;
   notes: string;
+  petId?: string; // Multi-pet: which pet this incident belongs to
 }
 
 export interface MoodLog {
@@ -57,6 +58,7 @@ export interface ScheduleItem {
   time: string; // HH:MM format
   label: string;
   icon: 'training' | 'sound' | 'walk' | 'vet' | 'feeding';
+  petId?: string; // Multi-pet: which pet this schedule item belongs to
 }
 
 export interface Reminder {
@@ -65,4 +67,5 @@ export interface Reminder {
   time: string; // HH:MM format
   days: string[]; // e.g. ['Mon', 'Wed', 'Fri']
   enabled: boolean;
+  petId?: string; // Multi-pet: which pet this reminder belongs to
 }

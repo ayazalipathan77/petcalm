@@ -16,6 +16,12 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
+  const cleanupMouseRef = useRef<(() => void) | null>(null);
+
+  // Clean up dangling window listeners if component unmounts during a drag
+  useEffect(() => {
+    return () => { cleanupMouseRef.current?.(); };
+  }, []);
 
   // Reset drag offset whenever sheet opens
   useEffect(() => {
@@ -60,8 +66,13 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       });
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
+      cleanupMouseRef.current = null;
     };
 
+    cleanupMouseRef.current = () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
   };

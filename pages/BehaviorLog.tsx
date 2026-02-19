@@ -10,10 +10,11 @@ import { useIncidents } from '../services/db';
 
 interface BehaviorLogProps {
   petName: string;
+  petId?: string | null;
 }
 
-export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName }) => {
-  const { incidents, addIncident, updateIncident, deleteIncident } = useIncidents();
+export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName, petId }) => {
+  const { incidents, hasMore, loadMore, addIncident, updateIncident, deleteIncident } = useIncidents(petId);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
@@ -34,7 +35,8 @@ export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName }) => {
         date: new Date().toISOString(),
         trigger: newTrigger,
         severity: newSeverity,
-        notes: newNotes
+        notes: newNotes,
+        petId: petId ?? undefined,
       });
     }
     setShowAddModal(false);
@@ -159,6 +161,14 @@ export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName }) => {
           </div>
         ))}
       </div>
+      {hasMore && (
+        <button
+          onClick={loadMore}
+          className="mt-4 w-full py-3 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-subtext hover:text-primary hover:border-primary transition-colors"
+        >
+          Load More
+        </button>
+      )}
       </>)}
 
       {/* Add / Edit Sheet */}

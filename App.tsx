@@ -10,10 +10,10 @@ import { Profile } from './pages/Profile';
 import { Guide } from './pages/Guide';
 import { Privacy } from './pages/Privacy';
 import { ViewState, Pet } from './types';
-import { usePet, migrateFromLocalStorage } from './services/db';
+import { usePets, migrateFromLocalStorage } from './services/db';
 
 const App: React.FC = () => {
-  const { pet, loading, savePet, deletePet } = usePet();
+  const { pets, activePet, activePetId, loading, savePet, addPet, setActivePet, deleteAllData } = usePets();
   const [view, setView] = useState<ViewState>('HOME');
   const [isPanicMode, setIsPanicMode] = useState(false);
   const [migrated, setMigrated] = useState(false);
@@ -26,12 +26,12 @@ const App: React.FC = () => {
   // Set initial view based on pet existence
   useEffect(() => {
     if (!loading) {
-      setView(pet ? 'HOME' : 'ONBOARDING');
+      setView(activePet ? 'HOME' : 'ONBOARDING');
     }
-  }, [loading, pet]);
+  }, [loading, activePet]);
 
   const handleOnboardingComplete = async (newPet: Pet) => {
-    await savePet(newPet);
+    await addPet(newPet);
     setView('HOME');
   };
 
@@ -40,7 +40,7 @@ const App: React.FC = () => {
   };
 
   const handleResetPet = async () => {
-    await deletePet();
+    await deleteAllData();
     setView('ONBOARDING');
   };
 
@@ -54,21 +54,37 @@ const App: React.FC = () => {
   }
 
   const renderContent = () => {
-    if (!pet && view !== 'ONBOARDING') return null;
+    if (!activePet && view !== 'ONBOARDING') return null;
 
     switch (view) {
       case 'HOME':
-        return <Home pet={pet!} onNavigate={setView} onPanic={() => setIsPanicMode(true)} />;
+        return (
+          <Home
+            pet={activePet!}
+            pets={pets}
+            activePetId={activePetId}
+            onSwitchPet={setActivePet}
+            onNavigate={setView}
+            onPanic={() => setIsPanicMode(true)}
+          />
+        );
       case 'SOUNDS':
         return <Sounds />;
       case 'TRAINING':
         return <Training />;
       case 'LOG':
-        return <BehaviorLog petName={pet!.name} />;
+        return <BehaviorLog petName={activePet!.name} petId={activePetId} />;
       case 'GUIDE':
         return <Guide />;
       case 'PROFILE':
-        return <Profile pet={pet!} onUpdatePet={handleUpdatePet} onResetPet={handleResetPet} onNavigate={setView} />;
+        return (
+          <Profile
+            pet={activePet!}
+            onUpdatePet={handleUpdatePet}
+            onResetPet={handleResetPet}
+            onNavigate={setView}
+          />
+        );
       case 'PRIVACY':
         return <Privacy />;
       default:
@@ -82,7 +98,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      {isPanicMode && <PanicMode onExit={() => setIsPanicMode(false)} petName={pet?.name || 'Your Pet'} />}
+      {isPanicMode && <PanicMode onExit={() => setIsPanicMode(false)} petName={activePet?.name || 'Your Pet'} />}
       <Layout currentView={view} onNavigate={setView} onPanic={() => setIsPanicMode(true)}>
         {renderContent()}
       </Layout>

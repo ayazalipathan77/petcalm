@@ -1,31 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ScheduleItem } from '../types';
 import { Pet, ViewState } from '../types';
 import { Bell, Music, Play, Calendar, Plus, X, BookOpen, Footprints, Stethoscope, UtensilsCrossed } from 'lucide-react';
 import { BottomSheet } from '../components/BottomSheet';
 import { Button } from '../components/ui/Button';
-import { DAILY_TIPS } from '../constants';
-import { useMoodLogs, useSchedule, useReminders } from '../services/db';
+import { PetSwitcher } from '../components/PetSwitcher';
+import { DAILY_TIPS, MOCK_PROGRAMS } from '../constants';
+import { useMoodLogs, useSchedule, useReminders, useSetting } from '../services/db';
 import { requestNotificationPermission, scheduleReminder, cancelReminder } from '../services/notifications';
 
 interface HomeProps {
   pet: Pet;
+  pets: Pet[];
+  activePetId: string | null;
+  onSwitchPet: (id: string) => void;
   onNavigate: (view: ViewState) => void;
   onPanic: () => void;
 }
 
-export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
+export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet, onNavigate, onPanic }) => {
   const today = new Date().toISOString().split('T')[0];
 
-  // Dexie hooks
+  // Dexie hooks — filtered by active pet where applicable
   const { moodLogs, saveMood } = useMoodLogs();
-  const { items: schedule, addItem: addScheduleItem, removeItem: removeScheduleItem } = useSchedule();
-  const { reminders, saveReminder, deleteReminder, toggleReminder } = useReminders();
+  const { items: schedule, addItem: addScheduleItem, removeItem: removeScheduleItem } = useSchedule(activePetId);
+  const { reminders, saveReminder, deleteReminder, toggleReminder } = useReminders(activePetId);
+  const { value: trainingProgress } = useSetting<Record<string, number>>('training_progress', {});
 
   const todayLog = moodLogs.find(l => l.date === today);
   const [mood, setMood] = useState<number | null>(null);
-  // Sync mood from loaded data
   const currentMood = mood ?? todayLog?.mood ?? null;
+
+  // Memoized 7-day chart data — only recomputes when moodLogs changes
+  const chartDays = useMemo(() =>
+    Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const key = d.toISOString().split('T')[0];
+      return {
+        key,
+        dayLabel: d.toLocaleDateString('en-US', { weekday: 'narrow' }),
+        log: moodLogs.find(l => l.date === key),
+      };
+    }),
+    [moodLogs]
+  );
+
+  // Find first in-progress training program
+  const inProgressProgram = MOCK_PROGRAMS.find(p => {
+    const idx = trainingProgress[p.id];
+    return idx !== undefined && idx > 0 && idx < p.steps.length;
+  });
 
   const handleMoodSelect = (value: number) => {
     if (navigator.vibrate) navigator.vibrate(50);
@@ -40,7 +65,13 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
 
   const handleAddScheduleItem = () => {
     if (!newLabel.trim()) return;
-    const item: ScheduleItem = { id: Math.random().toString(), time: newTime, label: newLabel, icon: newIcon };
+    const item: ScheduleItem = {
+      id: Math.random().toString(),
+      time: newTime,
+      label: newLabel,
+      icon: newIcon,
+      petId: activePetId ?? undefined,
+    };
     addScheduleItem(item);
     setShowAddSchedule(false);
     setNewLabel('');
@@ -76,7 +107,14 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
 
   const addReminder = () => {
     if (!reminderTitle.trim()) return;
-    const newReminder = { id: Math.random().toString(), title: reminderTitle, time: reminderTime, days: reminderDays, enabled: true };
+    const newReminder = {
+      id: Math.random().toString(),
+      title: reminderTitle,
+      time: reminderTime,
+      days: reminderDays,
+      enabled: true,
+      petId: activePetId ?? undefined,
+    };
     saveReminder(newReminder);
     scheduleReminder(newReminder);
     setShowAddReminder(false);
@@ -104,6 +142,7 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
           <div>
             <h1 className="text-lg font-bold text-neutral-text leading-tight">{pet.name}</h1>
             <p className="text-xs text-neutral-subtext">{new Date().getHours() < 12 ? 'Good Morning!' : new Date().getHours() < 17 ? 'Good Afternoon!' : 'Good Evening!'}</p>
+            <PetSwitcher pets={pets} activePetId={activePetId} onSwitch={onSwitchPet} />
           </div>
         </div>
         <button onClick={() => setShowReminders(true)} className="relative p-2 text-neutral-subtext hover:text-primary transition-colors">
@@ -188,24 +227,41 @@ export const Home: React.FC<HomeProps> = ({ pet, onNavigate, onPanic }) => {
             <div className="mt-3 pt-3 border-t border-primary/10">
               <p className="text-[10px] text-neutral-subtext uppercase tracking-wider font-bold mb-2">Last 7 Days</p>
               <div className="flex gap-1 items-end">
-                {Array.from({ length: 7 }).map((_, i) => {
-                  const d = new Date(); d.setDate(d.getDate() - (6 - i));
-                  const key = d.toISOString().split('T')[0];
-                  const log = moodLogs.find(l => l.date === key);
-                  return (
-                    <div key={key} className="flex-1 flex flex-col items-center gap-1">
-                      <div
-                        className={`w-full rounded-sm transition-all ${log ? 'bg-primary' : 'bg-neutral-200'}`}
-                        style={{ height: log ? `${log.mood * 6}px` : '4px' }}
-                      />
-                      <span className="text-[8px] text-neutral-400">{d.toLocaleDateString('en-US', { weekday: 'narrow' })}</span>
-                    </div>
-                  );
-                })}
+                {chartDays.map(({ key, dayLabel, log }) => (
+                  <div key={key} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className={`w-full rounded-sm transition-all ${log ? 'bg-primary' : 'bg-neutral-200'}`}
+                      style={{ height: log ? `${log.mood * 6}px` : '4px' }}
+                    />
+                    <span className="text-[8px] text-neutral-400">{dayLabel}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </section>
+
+        {/* Training Resume CTA */}
+        {inProgressProgram && (
+          <section className="bg-white border border-primary/20 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary flex-shrink-0">
+              <Play size={20} fill="currentColor" className="ml-0.5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-neutral-subtext font-bold uppercase tracking-wider">Continue Training</p>
+              <h4 className="font-bold text-neutral-text text-sm truncate">{inProgressProgram.title}</h4>
+              <p className="text-xs text-neutral-subtext">
+                Step {trainingProgress[inProgressProgram.id] + 1} of {inProgressProgram.steps.length}
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigate('TRAINING')}
+              className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold flex-shrink-0 hover:bg-primary-dark transition-colors"
+            >
+              Resume
+            </button>
+          </section>
+        )}
 
         {/* Quick Actions Grid */}
         <section className="grid grid-cols-2 gap-4">

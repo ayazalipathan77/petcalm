@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MOCK_SOUNDS } from '../constants';
-import { Play, Pause, Heart, Lock, Volume1, Sliders, X, Gauge, WifiOff, Timer, Zap } from 'lucide-react';
+import { Play, Pause, Heart, Lock, Volume1, Sliders, X, Gauge, WifiOff, Timer, Zap, AlertCircle, Loader2 } from 'lucide-react';
 import { NoiseGenerator, isGeneratedNoise, getNoiseType } from '../services/audioEngine';
 import { useSetting } from '../services/db';
 
@@ -18,6 +18,10 @@ export const Sounds: React.FC = () => {
   const [showControls, setShowControls] = useState(false);
   const [sleepTimer, setSleepTimer] = useState<number | null>(null);
   const sleepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Error & loading states
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [isBuffering, setIsBuffering] = useState(false);
 
   // Dual Audio Engine
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -77,6 +81,9 @@ export const Sounds: React.FC = () => {
     // Stop previous audio
     stopAll();
 
+    setAudioError(null);
+    setIsBuffering(false);
+
     if (isGeneratedNoise(sound.url)) {
       // Web Audio API path
       const gen = new NoiseGenerator();
@@ -86,6 +93,13 @@ export const Sounds: React.FC = () => {
       // HTMLAudioElement path
       const audio = new Audio(sound.url);
       audio.loop = true;
+      audio.addEventListener('waiting', () => setIsBuffering(true));
+      audio.addEventListener('canplay', () => setIsBuffering(false));
+      audio.addEventListener('error', () => {
+        setAudioError('Could not load this track. Check your connection.');
+        setIsPlaying(false);
+        setIsBuffering(false);
+      });
       audioRef.current = audio;
     }
   }, [activeSoundId]);
@@ -100,10 +114,16 @@ export const Sounds: React.FC = () => {
       if (!gen) return;
 
       if (isPlaying) {
-        if (gen.isPlaying) {
-          gen.resume();
-        } else {
-          gen.play(getNoiseType(sound.url), volume / 100);
+        try {
+          if (gen.isPlaying) {
+            gen.resume();
+          } else {
+            gen.play(getNoiseType(sound.url), volume / 100);
+          }
+        } catch (err) {
+          console.error("Audio generation failed:", err);
+          setAudioError('Audio unavailable in this browser.');
+          setIsPlaying(false);
         }
       } else {
         gen.pause();
@@ -117,7 +137,11 @@ export const Sounds: React.FC = () => {
       audio.playbackRate = playbackSpeed;
 
       if (isPlaying) {
-        audio.play().catch(err => console.error("Playback failed:", err));
+        audio.play().catch(err => {
+          console.error("Playback failed:", err);
+          setAudioError('Playback failed. Tap to try again.');
+          setIsPlaying(false);
+        });
       } else {
         audio.pause();
       }
@@ -143,6 +167,15 @@ export const Sounds: React.FC = () => {
   return (
     <div className="pb-24 pt-6 px-6 relative min-h-full">
       <h1 className="text-2xl font-bold text-neutral-text mb-6">Calming Sounds</h1>
+
+      {/* Error Toast */}
+      {audioError && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-sm text-red-700">
+          <AlertCircle size={16} className="flex-shrink-0 text-red-500" />
+          <span className="flex-1">{audioError}</span>
+          <button onClick={() => setAudioError(null)} className="text-red-400 hover:text-red-600"><X size={14} /></button>
+        </div>
+      )}
 
       {/* Categories */}
       <div className="flex gap-2 overflow-x-auto pb-4 hide-scrollbar mb-4">
@@ -182,7 +215,9 @@ export const Sounds: React.FC = () => {
 
                 <div className="flex items-center justify-center">
                    <div className={`w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg transition-transform ${activeSoundId === sound.id && isPlaying ? 'scale-110' : 'scale-100'}`}>
-                      {activeSoundId === sound.id && isPlaying ? (
+                      {activeSoundId === sound.id && isBuffering ? (
+                         <Loader2 size={20} className="text-secondary animate-spin" />
+                      ) : activeSoundId === sound.id && isPlaying ? (
                          <Pause size={20} className="text-secondary" fill="currentColor" />
                       ) : (
                          <Play size={20} className="text-secondary ml-1" fill="currentColor" />

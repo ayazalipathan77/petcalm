@@ -15,6 +15,16 @@ export default defineConfig(({ mode }) => {
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_PROXY_URL': JSON.stringify(env.GEMINI_PROXY_URL || '')
       },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              recharts: ['recharts'],
+              lucide: ['lucide-react'],
+            }
+          }
+        }
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

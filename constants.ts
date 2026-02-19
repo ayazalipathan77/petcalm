@@ -109,7 +109,7 @@ export const MOCK_SOUNDS: Sound[] = [
     duration: 9999,
     isPremium: false,
     color: 'bg-purple-100',
-    url: 'generate:brown'
+    url: 'generate:pink'
   },
   {
     id: '13',

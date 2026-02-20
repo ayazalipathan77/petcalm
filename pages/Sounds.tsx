@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MOCK_SOUNDS } from '../constants';
-import { Play, Pause, Heart, Lock, Volume1, Sliders, X, Gauge, WifiOff, Timer, Zap, AlertCircle, Loader2 } from 'lucide-react';
+import { Play, Pause, Heart, Lock, Volume1, Sliders, X, Gauge, WifiOff, Timer, Zap, AlertCircle, Loader2, Plus } from 'lucide-react';
 import { NoiseGenerator, isGeneratedNoise, getNoiseType } from '../services/audioEngine';
 import { useSetting } from '../services/db';
 
@@ -8,6 +8,12 @@ export const Sounds: React.FC = () => {
   const [activeSoundId, setActiveSoundId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [category, setCategory] = useState('All');
+
+  // Mix slot — second sound plays simultaneously
+  const [mixSoundId, setMixSoundId] = useState<string | null>(null);
+  const [mixVolume, setMixVolume] = useState(50);
+  const mixAudioRef = useRef<HTMLAudioElement | null>(null);
+  const mixNoiseRef = useRef<NoiseGenerator | null>(null);
 
   // Favorites via Dexie
   const { value: favorites, save: saveFavorites, loaded: favoritesLoaded } = useSetting<string[]>('sound_favorites', []);
@@ -23,11 +29,12 @@ export const Sounds: React.FC = () => {
   const [audioError, setAudioError] = useState<string | null>(null);
   const [isBuffering, setIsBuffering] = useState(false);
 
-  // Dual Audio Engine
+  // Dual Audio Engine (primary)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const noiseRef = useRef<NoiseGenerator | null>(null);
 
   const activeSound = MOCK_SOUNDS.find(s => s.id === activeSoundId);
+  const mixSound = MOCK_SOUNDS.find(s => s.id === mixSoundId);
   const isNoise = activeSound ? isGeneratedNoise(activeSound.url) : false;
 
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
@@ -45,6 +52,11 @@ export const Sounds: React.FC = () => {
     if (noiseRef.current) { noiseRef.current.stop(); noiseRef.current = null; }
   };
 
+  const stopMix = () => {
+    if (mixAudioRef.current) { mixAudioRef.current.pause(); mixAudioRef.current = null; }
+    if (mixNoiseRef.current) { mixNoiseRef.current.stop(); mixNoiseRef.current = null; }
+  };
+
   const startSleepTimer = (minutes: number | null) => {
     if (sleepTimerRef.current) clearInterval(sleepTimerRef.current);
     if (minutes === null) { setSleepTimer(null); return; }
@@ -54,7 +66,9 @@ export const Sounds: React.FC = () => {
         if (prev === null || prev <= 1) {
           if (sleepTimerRef.current) clearInterval(sleepTimerRef.current);
           stopAll();
+          stopMix();
           setIsPlaying(false);
+          setMixSoundId(null);
           return null;
         }
         return prev - 1;
@@ -66,11 +80,12 @@ export const Sounds: React.FC = () => {
   useEffect(() => {
     return () => {
       stopAll();
+      stopMix();
       if (sleepTimerRef.current) clearInterval(sleepTimerRef.current);
     };
   }, []);
 
-  // Handle track changes
+  // Handle primary track changes
   useEffect(() => {
     const sound = MOCK_SOUNDS.find(s => s.id === activeSoundId);
     if (!sound) {
@@ -78,19 +93,14 @@ export const Sounds: React.FC = () => {
       return;
     }
 
-    // Stop previous audio
     stopAll();
-
     setAudioError(null);
     setIsBuffering(false);
 
     if (isGeneratedNoise(sound.url)) {
-      // Web Audio API path
       const gen = new NoiseGenerator();
       noiseRef.current = gen;
-      // Don't play yet - let the control effect handle it
     } else {
-      // HTMLAudioElement path
       const audio = new Audio(sound.url);
       audio.loop = true;
       audio.addEventListener('waiting', () => setIsBuffering(true));
@@ -104,7 +114,36 @@ export const Sounds: React.FC = () => {
     }
   }, [activeSoundId]);
 
-  // Handle play/pause + volume + speed
+  // Handle mix track changes
+  useEffect(() => {
+    const sound = MOCK_SOUNDS.find(s => s.id === mixSoundId);
+    stopMix();
+    if (!sound) return;
+
+    if (isGeneratedNoise(sound.url)) {
+      const gen = new NoiseGenerator();
+      mixNoiseRef.current = gen;
+      try {
+        gen.play(getNoiseType(sound.url), mixVolume / 100);
+      } catch (_) {
+        // silent fail for mix
+      }
+    } else {
+      const audio = new Audio(sound.url);
+      audio.loop = true;
+      audio.volume = mixVolume / 100;
+      audio.play().catch(() => {}); // best-effort autoplay
+      mixAudioRef.current = audio;
+    }
+  }, [mixSoundId]);
+
+  // Sync mix volume
+  useEffect(() => {
+    if (mixAudioRef.current) mixAudioRef.current.volume = mixVolume / 100;
+    if (mixNoiseRef.current) mixNoiseRef.current.setVolume(mixVolume / 100);
+  }, [mixVolume]);
+
+  // Handle play/pause + volume + speed for primary
   useEffect(() => {
     const sound = MOCK_SOUNDS.find(s => s.id === activeSoundId);
     if (!sound) return;
@@ -158,6 +197,16 @@ export const Sounds: React.FC = () => {
     }
   };
 
+  const handleToggleMix = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (mixSoundId === id) {
+      stopMix();
+      setMixSoundId(null);
+    } else {
+      setMixSoundId(id);
+    }
+  };
+
   const filteredSounds = category === 'All'
     ? MOCK_SOUNDS
     : category === 'Favorites'
@@ -198,6 +247,8 @@ export const Sounds: React.FC = () => {
       <div className="grid grid-cols-2 gap-4 pb-20">
         {filteredSounds.map(sound => {
           const isGenerated = isGeneratedNoise(sound.url);
+          const isMixed = mixSoundId === sound.id;
+          const isPrimary = activeSoundId === sound.id;
           return (
             <div key={sound.id} className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all" onClick={() => handlePlay(sound.id)}>
               <div className={`absolute inset-0 ${sound.color} opacity-50 group-hover:opacity-60 transition-opacity`}></div>
@@ -214,10 +265,10 @@ export const Sounds: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-center">
-                   <div className={`w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg transition-transform ${activeSoundId === sound.id && isPlaying ? 'scale-110' : 'scale-100'}`}>
-                      {activeSoundId === sound.id && isBuffering ? (
+                   <div className={`w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg transition-transform ${isPrimary && isPlaying ? 'scale-110' : 'scale-100'}`}>
+                      {isPrimary && isBuffering ? (
                          <Loader2 size={20} className="text-secondary animate-spin" />
-                      ) : activeSoundId === sound.id && isPlaying ? (
+                      ) : isPrimary && isPlaying ? (
                          <Pause size={20} className="text-secondary" fill="currentColor" />
                       ) : (
                          <Play size={20} className="text-secondary ml-1" fill="currentColor" />
@@ -237,9 +288,22 @@ export const Sounds: React.FC = () => {
                           {sound.duration >= 9999 ? '∞' : `${Math.floor(sound.duration / 60)} mins`}
                         </p>
                       )}
-                      <div className="flex gap-1 text-[10px] text-neutral-500 bg-white/50 px-1.5 py-0.5 rounded-full">
-                          <WifiOff size={10} className="mt-0.5" /> Offline
-                      </div>
+                      {/* Mix button — only visible when a primary sound is active and this isn't it */}
+                      {activeSoundId && !isPrimary ? (
+                        <button
+                          onClick={(e) => handleToggleMix(sound.id, e)}
+                          className={`flex gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium transition-colors ${
+                            isMixed ? 'bg-primary text-white' : 'bg-white/50 text-neutral-500 hover:bg-primary/20'
+                          }`}
+                        >
+                          {isMixed ? <X size={10} className="mt-0.5" /> : <Plus size={10} className="mt-0.5" />}
+                          {isMixed ? 'Mixed' : 'Mix'}
+                        </button>
+                      ) : (
+                        <div className="flex gap-1 text-[10px] text-neutral-500 bg-white/50 px-1.5 py-0.5 rounded-full">
+                            <WifiOff size={10} className="mt-0.5" /> Offline
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
@@ -264,10 +328,10 @@ export const Sounds: React.FC = () => {
                      </button>
                    </div>
 
-                   {/* Volume Slider */}
+                   {/* Primary Volume Slider */}
                    <div className="mb-4">
                      <div className="flex justify-between text-xs text-neutral-500 mb-2">
-                        <span className="flex items-center gap-1"><Volume1 size={14} /> Volume</span>
+                        <span className="flex items-center gap-1"><Volume1 size={14} /> Primary Volume</span>
                         <span className="font-medium">{volume}%</span>
                      </div>
                      <input
@@ -279,6 +343,24 @@ export const Sounds: React.FC = () => {
                         className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-secondary"
                      />
                    </div>
+
+                   {/* Mix Volume (only shown when mix is active) */}
+                   {mixSoundId && (
+                     <div className="mb-4">
+                       <div className="flex justify-between text-xs text-neutral-500 mb-2">
+                         <span className="flex items-center gap-1"><Volume1 size={14} /> Mix Volume ({mixSound?.title})</span>
+                         <span className="font-medium">{mixVolume}%</span>
+                       </div>
+                       <input
+                         type="range"
+                         min="0"
+                         max="100"
+                         value={mixVolume}
+                         onChange={(e) => setMixVolume(Number(e.target.value))}
+                         className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                       />
+                     </div>
+                   )}
 
                    {/* Speed Control - only for file-based sounds */}
                    {!isNoise && (
@@ -329,38 +411,54 @@ export const Sounds: React.FC = () => {
                )}
 
                {/* Main Player Bar */}
-               <div className="bg-neutral-text rounded-2xl p-3 pl-4 shadow-2xl flex items-center gap-3 text-white">
-                  <div className={`w-10 h-10 rounded-lg ${activeSound?.color} opacity-80 flex items-center justify-center`}>
-                    <div className={`w-2 bg-white/50 rounded-full animate-bounce ${isPlaying ? 'h-4' : 'h-1'}`} style={{animationDelay: '0ms'}}></div>
-                    <div className={`w-2 bg-white/50 rounded-full animate-bounce mx-0.5 ${isPlaying ? 'h-6' : 'h-1'}`} style={{animationDelay: '150ms'}}></div>
-                    <div className={`w-2 bg-white/50 rounded-full animate-bounce ${isPlaying ? 'h-3' : 'h-1'}`} style={{animationDelay: '300ms'}}></div>
-                  </div>
+               <div className="bg-neutral-text rounded-2xl shadow-2xl overflow-hidden">
+                 <div className="p-3 pl-4 flex items-center gap-3 text-white">
+                    <div className={`w-10 h-10 rounded-lg ${activeSound?.color} opacity-80 flex items-center justify-center`}>
+                      <div className={`w-2 bg-white/50 rounded-full animate-bounce ${isPlaying ? 'h-4' : 'h-1'}`} style={{animationDelay: '0ms'}}></div>
+                      <div className={`w-2 bg-white/50 rounded-full animate-bounce mx-0.5 ${isPlaying ? 'h-6' : 'h-1'}`} style={{animationDelay: '150ms'}}></div>
+                      <div className={`w-2 bg-white/50 rounded-full animate-bounce ${isPlaying ? 'h-3' : 'h-1'}`} style={{animationDelay: '300ms'}}></div>
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-sm truncate">{activeSound?.title}</h4>
-                    <p className="text-[10px] text-gray-400 flex items-center gap-2">
-                      {isNoise ? (
-                        <span>Generated</span>
-                      ) : (
-                        <span>{playbackSpeed}x Speed</span>
-                      )}
-                      <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
-                      <span>Vol: {volume}%</span>
-                      {sleepTimer !== null && (<><span className="w-1 h-1 bg-gray-600 rounded-full"></span><span>{sleepTimer}m</span></>)}
-                    </p>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm truncate">{activeSound?.title}</h4>
+                      <p className="text-[10px] text-gray-400 flex items-center gap-2">
+                        {isNoise ? (
+                          <span>Generated</span>
+                        ) : (
+                          <span>{playbackSpeed}x Speed</span>
+                        )}
+                        <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+                        <span>Vol: {volume}%</span>
+                        {sleepTimer !== null && (<><span className="w-1 h-1 bg-gray-600 rounded-full"></span><span>{sleepTimer}m</span></>)}
+                      </p>
+                    </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setShowControls(!showControls)}
-                      className={`p-2 rounded-full transition-colors ${showControls ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}
-                    >
-                      <Sliders size={20} />
-                    </button>
-                    <button onClick={() => setIsPlaying(!isPlaying)} className="p-2 bg-white text-neutral-text rounded-full hover:scale-105 active:scale-95 transition-all">
-                      {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
-                    </button>
-                  </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setShowControls(!showControls)}
+                        className={`p-2 rounded-full transition-colors ${showControls ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}
+                      >
+                        <Sliders size={20} />
+                      </button>
+                      <button onClick={() => setIsPlaying(!isPlaying)} className="p-2 bg-white text-neutral-text rounded-full hover:scale-105 active:scale-95 transition-all">
+                        {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
+                      </button>
+                    </div>
+                 </div>
+
+                 {/* Mix row */}
+                 {mixSoundId && mixSound && (
+                   <div className="px-4 py-2 bg-white/10 flex items-center gap-2">
+                     <div className={`w-4 h-4 rounded ${mixSound.color} opacity-80`}></div>
+                     <span className="text-[10px] text-gray-300 flex-1 truncate">+ {mixSound.title} ({mixVolume}%)</span>
+                     <button
+                       onClick={() => { stopMix(); setMixSoundId(null); }}
+                       className="text-gray-400 hover:text-white"
+                     >
+                       <X size={12} />
+                     </button>
+                   </div>
+                 )}
                </div>
              </div>
            </div>

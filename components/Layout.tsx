@@ -46,6 +46,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigat
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id as ViewState)}
+                aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
                 className={`flex flex-col items-center justify-center p-2 rounded-xl transition-colors w-16 ${
                   isActive ? 'text-primary' : 'text-neutral-subtext hover:text-primary-light'
                 }`}

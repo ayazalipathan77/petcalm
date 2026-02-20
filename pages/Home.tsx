@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ScheduleItem } from '../types';
 import { Pet, ViewState } from '../types';
-import { Bell, Music, Play, Calendar, Plus, X, BookOpen, Footprints, Stethoscope, UtensilsCrossed } from 'lucide-react';
+import { Bell, Music, Play, Calendar, Plus, X, BookOpen, Footprints, Stethoscope, UtensilsCrossed, BrainCircuit, Sparkles } from 'lucide-react';
 import { BottomSheet } from '../components/BottomSheet';
 import { Button } from '../components/ui/Button';
 import { PetSwitcher } from '../components/PetSwitcher';
-import { DAILY_TIPS, MOCK_PROGRAMS } from '../constants';
-import { useMoodLogs, useSchedule, useReminders, useSetting } from '../services/db';
+import { DAILY_TIPS, MOCK_PROGRAMS, BREED_TIPS } from '../constants';
+import { useMoodLogs, useSchedule, useReminders, useSetting, useIncidents } from '../services/db';
 import { requestNotificationPermission, scheduleReminder, cancelReminder } from '../services/notifications';
+import { getWeeklyReport } from '../services/geminiService';
 
 interface HomeProps {
   pet: Pet;
@@ -26,6 +27,10 @@ export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet,
   const { items: schedule, addItem: addScheduleItem, removeItem: removeScheduleItem } = useSchedule(activePetId);
   const { reminders, saveReminder, deleteReminder, toggleReminder } = useReminders(activePetId);
   const { value: trainingProgress } = useSetting<Record<string, number>>('training_progress', {});
+  const { incidents } = useIncidents(activePetId);
+  const { value: cachedWeeklyReport, save: saveWeeklyReport } = useSetting<string>('weekly_report_' + (activePetId ?? 'default'), '');
+  const [weeklyReport, setWeeklyReport] = useState<string | null>(null);
+  const [isLoadingReport, setIsLoadingReport] = useState(false);
 
   const todayLog = moodLogs.find(l => l.date === today);
   const [mood, setMood] = useState<number | null>(null);
@@ -122,6 +127,25 @@ export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet,
     setReminderTime('09:00');
     setReminderDays(['Mon', 'Wed', 'Fri']);
   };
+
+  // Weekly report: auto-load cached, allow manual refresh
+  useEffect(() => {
+    if (cachedWeeklyReport) setWeeklyReport(cachedWeeklyReport);
+  }, [cachedWeeklyReport]);
+
+  const handleWeeklyReport = async () => {
+    setIsLoadingReport(true);
+    const result = await getWeeklyReport(moodLogs, incidents, pet.name);
+    setWeeklyReport(result);
+    saveWeeklyReport(result);
+    setIsLoadingReport(false);
+  };
+
+  // Breed-specific tip — pick one deterministically based on date
+  const breedTips = pet.breed ? (BREED_TIPS[pet.breed] ?? []) : [];
+  const breedTip = breedTips.length > 0
+    ? breedTips[Math.floor(Date.now() / 86400000) % breedTips.length]
+    : null;
 
   const moodEmojis = ['😰', '😕', '😐', '🙂', '😊'];
 
@@ -354,6 +378,40 @@ export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet,
           </BottomSheet>
         </section>
 
+        {/* Weekly AI Report */}
+        {moodLogs.length >= 3 && (
+          <section>
+            {weeklyReport ? (
+              <div className="bg-gradient-to-br from-secondary/10 to-white p-5 rounded-2xl border border-secondary/20 animate-fade-in">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-secondary-dark font-bold text-sm">
+                    <BrainCircuit size={16} />
+                    Weekly Wellness Report
+                  </div>
+                  <button
+                    onClick={() => { setWeeklyReport(null); saveWeeklyReport(''); }}
+                    className="text-xs text-neutral-400 underline"
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <p className="text-sm text-neutral-text leading-relaxed whitespace-pre-line">{weeklyReport}</p>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                fullWidth
+                onClick={handleWeeklyReport}
+                isLoading={isLoadingReport}
+                className="flex items-center justify-center gap-2 border border-secondary/30 text-secondary-dark"
+              >
+                <BrainCircuit size={16} />
+                Generate Weekly Report
+              </Button>
+            )}
+          </section>
+        )}
+
         {/* Tip of the Day */}
         <section className="bg-accent/10 p-5 rounded-2xl border-l-4 border-accent relative overflow-hidden">
           <div className="relative z-10">
@@ -368,6 +426,19 @@ export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet,
             <Music size={80} />
           </div>
         </section>
+
+        {/* Breed-Specific Tip */}
+        {breedTip && (
+          <section className="bg-primary/5 p-5 rounded-2xl border border-primary/15 flex gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 mt-0.5">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">{pet.breed} Tip</p>
+              <p className="text-sm text-neutral-text leading-relaxed">{breedTip}</p>
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

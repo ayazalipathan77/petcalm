@@ -320,6 +320,82 @@ export const DAILY_TIPS = [
   'Resource guarding tip: provide N+1 of everything (bowls, beds, toys) in multi-pet households.',
 ];
 
+export const BREED_TIPS: Record<string, string[]> = {
+  // Dogs
+  'Border Collie': [
+    'Border Collies need 2+ hours of mental stimulation daily — nose work and puzzle feeders prevent anxiety-driven herding behaviors.',
+    'Provide a "job" for your Border Collie: learning new tricks or agility drills dramatically reduces generalized anxiety.',
+  ],
+  'German Shepherd': [
+    'German Shepherds are prone to separation anxiety. Crate training from puppyhood creates a reliable safe haven.',
+    'Daily obedience training sessions (15 mins) satisfy a German Shepherd\'s working drive and reduce baseline anxiety.',
+  ],
+  'Labrador Retriever': [
+    'Labs are highly food motivated — use high-value treats during desensitization to increase effectiveness.',
+    'Labradors prone to storm anxiety often benefit from a ThunderShirt combined with a white noise machine.',
+  ],
+  'Golden Retriever': [
+    'Golden Retrievers are sensitive to human emotions — keep your own energy calm during anxiety episodes.',
+    'Goldens respond well to TTouch massage, especially ear slides, before known stressors like vet visits.',
+  ],
+  'French Bulldog': [
+    'French Bulldogs are brachycephalic — avoid exercise in heat, which can amplify anxiety due to breathing difficulty.',
+    'Frenchies can develop noise sensitivity early. Start sound desensitization by 12 weeks of age.',
+  ],
+  'Chihuahua': [
+    'Chihuahuas often exhibit anxiety-driven reactivity. Avoid forcing interactions — let them approach on their own terms.',
+    'Small dog anxiety is often under-treated. Chihuahuas benefit from the same behavior protocols as larger breeds.',
+  ],
+  'Poodle': [
+    'Poodles are highly intelligent and thrive on mental enrichment. Boredom is a leading cause of anxiety in this breed.',
+    'Standard Poodles are prone to separation anxiety — practice short absences before gradually extending them.',
+  ],
+  'Beagle': [
+    'Beagles are scent hounds — nose work is particularly effective at reducing their anxiety and building confidence.',
+    'Beagle howling during separation is often anxiety-driven. Treat dispensers can bridge short absences.',
+  ],
+  'Dachshund': [
+    'Dachshunds can develop resource guarding anxiety. Provide N+1 resources in multi-pet homes.',
+    'Dachshunds respond well to crate training with a covered, den-like environment that mimics a burrow.',
+  ],
+  'Shih Tzu': [
+    'Shih Tzus are companion breeds and may show distress when left alone — gradual independence training helps.',
+    'Regular grooming can be a trigger — start cooperative care (chin rest, handling exercises) from puppyhood.',
+  ],
+  // Cats
+  'Siamese': [
+    'Siamese cats are highly vocal when anxious — respond to vocalizations calmly to avoid reinforcing distress.',
+    'Siamese cats benefit from environmental enrichment: window perches, puzzle feeders, and interactive play sessions.',
+  ],
+  'Maine Coon': [
+    'Maine Coons are social cats that can develop separation anxiety — consider a companion pet if you\'re often away.',
+    'Maine Coons respond well to routine. Consistent feeding and play schedules reduce baseline anxiety.',
+  ],
+  'Persian': [
+    'Persian cats are stress-sensitive — minimize changes to their environment and routine.',
+    'Persian cats benefit from Feliway diffusers, especially during household changes or introduction of new pets.',
+  ],
+  'Bengal': [
+    'Bengal cats need 2+ hours of active play daily. Unmet energy needs manifest as anxiety and destructive behavior.',
+    'Bengals are highly territorial — provide vertical space (cat trees, shelves) to reduce inter-cat conflict anxiety.',
+  ],
+  'Ragdoll': [
+    'Ragdolls tend to freeze rather than flee when anxious. Watch for subtle stress signals like changed whisker position.',
+    'Ragdolls do well with TTouch bodywork — their calm temperament makes them ideal cooperative care candidates.',
+  ],
+};
+
+export const COMMUNITY_TIPS: string[] = [
+  '"Frozen Kong with peanut butter + kibble is the only thing that calms my Border Collie during thunderstorms." — Border Collie owner',
+  '"We put an old worn t-shirt in our dog\'s crate when we leave. The familiar scent keeps her calm for hours." — Golden Retriever owner',
+  '"Playing YouTube fireplace videos with white noise helped our rescue cat through the first month in our home." — Cat adopter',
+  '"The departure cue protocol changed everything. After 2 weeks, my dog stopped pacing when I picked up my keys." — Labrador owner',
+  '"We do 10 minutes of nose work before any vet visit. It lowers anxiety before we even get in the car." — Beagle owner',
+  '"Feliway diffuser + classical music playlist = our anxious Siamese went from hiding all day to joining us on the couch." — Siamese owner',
+  '"Our vet prescribed gabapentin for vet visits. The test dose at home first was essential — it made him sleepy but calm." — Senior dog owner',
+  '"TTouch ear slides before nail trims — my cat used to fight and now she just sits there. Took 3 weeks of practice." — Persian cat owner',
+];
+
 export const MOCK_INCIDENTS: Incident[] = [
   { id: 'i1', date: new Date(Date.now() - 86400000 * 2).toISOString(), trigger: 'Loud Noises', severity: 4, notes: 'Garbage truck startled him.' },
   { id: 'i2', date: new Date(Date.now() - 86400000 * 5).toISOString(), trigger: 'Separation', severity: 2, notes: 'Whined for 5 mins then settled.' },

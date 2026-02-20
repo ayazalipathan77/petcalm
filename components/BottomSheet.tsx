@@ -81,7 +81,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center animate-fade-in"
+      className="fixed inset-0 bg-black/50 z-[60] flex items-end justify-center animate-fade-in"
       onClick={onClose}
     >
       <div

@@ -8,6 +8,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useIncidents } from '../services/db';
 import jsPDF from 'jspdf';
+import { shouldPromptReview, requestAppReview, markReviewPrompted } from '../services/appReview';
 
 interface BehaviorLogProps {
   petName: string;
@@ -39,6 +40,12 @@ export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName, petId }) => {
         notes: newNotes,
         petId: petId ?? undefined,
       });
+      // Prompt review after 5th log entry (positive milestone)
+      const newCount = incidents.length + 1;
+      if (newCount === 5 && shouldPromptReview(1)) {
+        markReviewPrompted();
+        setTimeout(requestAppReview, 1500);
+      }
     }
     setShowAddModal(false);
     setNewSeverity(3);

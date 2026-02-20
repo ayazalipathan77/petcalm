@@ -4,6 +4,7 @@ import { TrainingProgram } from '../types';
 import { ChevronRight, Sparkles, Home, Car, Lock, CheckCircle, ArrowLeft, Info, Leaf, PlayCircle, Timer, Pause } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useSetting } from '../services/db';
+import { shouldPromptReview, requestAppReview, markReviewPrompted } from '../services/appReview';
 
 // Parse "5 mins" → 300, "3 mins" → 180; returns null for reps/days
 const parseDurationToSeconds = (duration: string): number | null => {
@@ -89,6 +90,11 @@ export const Training: React.FC = () => {
 
   const handleCompleteStep = (programId: string, stepIndex: number) => {
     if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+    // Prompt review after completing first step of any program
+    if (stepIndex === 0 && shouldPromptReview(1)) {
+      markReviewPrompted();
+      setTimeout(requestAppReview, 2000);
+    }
     const updated = localPrograms.map(p => {
       if (p.id === programId) {
         const newIndex = stepIndex === p.completedStepIndex ? p.completedStepIndex + 1 : p.completedStepIndex;

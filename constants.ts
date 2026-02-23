@@ -41,7 +41,7 @@ export const MOCK_SOUNDS: Sound[] = [
     title: 'Ocean Waves',
     category: 'Nature',
     duration: 2400,
-    isPremium: false,
+    isPremium: true,
     color: 'bg-cyan-100',
     url: '/sounds/ocean-waves.mp3'
   },
@@ -50,7 +50,7 @@ export const MOCK_SOUNDS: Sound[] = [
     title: 'Creek Water',
     category: 'Nature',
     duration: 3600,
-    isPremium: false,
+    isPremium: true,
     color: 'bg-teal-100',
     url: '/sounds/creek-water.mp3'
   },
@@ -78,7 +78,7 @@ export const MOCK_SOUNDS: Sound[] = [
     title: 'Pink Noise (Soft)',
     category: 'White Noise',
     duration: 9999,
-    isPremium: false,
+    isPremium: true,
     color: 'bg-pink-100',
     url: 'generate:pink'
   },
@@ -88,7 +88,7 @@ export const MOCK_SOUNDS: Sound[] = [
     title: 'Heartbeat (60 BPM)',
     category: 'Classical',
     duration: 1800,
-    isPremium: false,
+    isPremium: true,
     color: 'bg-red-100',
     url: '/sounds/heartbeat.mp3'
   },
@@ -97,7 +97,7 @@ export const MOCK_SOUNDS: Sound[] = [
     title: 'Slow Piano (50 BPM)',
     category: 'Classical',
     duration: 1800,
-    isPremium: false,
+    isPremium: true,
     color: 'bg-amber-100',
     url: '/sounds/soft-piano.mp3'
   },
@@ -107,7 +107,7 @@ export const MOCK_SOUNDS: Sound[] = [
     title: 'Deep Sleep Frequencies',
     category: 'Specialized',
     duration: 9999,
-    isPremium: false,
+    isPremium: true,
     color: 'bg-purple-100',
     url: 'generate:pink'
   },
@@ -116,7 +116,7 @@ export const MOCK_SOUNDS: Sound[] = [
     title: 'Purring Frequency (25 Hz)',
     category: 'Specialized',
     duration: 9999,
-    isPremium: false,
+    isPremium: true,
     color: 'bg-orange-100',
     url: 'generate:purr'
   },
@@ -125,7 +125,7 @@ export const MOCK_SOUNDS: Sound[] = [
     title: 'Binaural Theta (5 Hz)',
     category: 'Specialized',
     duration: 9999,
-    isPremium: false,
+    isPremium: true,
     color: 'bg-indigo-100',
     url: 'generate:binaural'
   },

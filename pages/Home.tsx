@@ -5,7 +5,7 @@ import { Bell, Music, Play, Calendar, Plus, X, BookOpen, Footprints, Stethoscope
 import { BottomSheet } from '../components/BottomSheet';
 import { Button } from '../components/ui/Button';
 import { PetSwitcher } from '../components/PetSwitcher';
-import { DAILY_TIPS, MOCK_PROGRAMS, BREED_TIPS } from '../constants';
+import { DAILY_TIPS, MOCK_PROGRAMS, BREED_TIPS, COMMUNITY_TIPS } from '../constants';
 import { useMoodLogs, useSchedule, useReminders, useSetting, useIncidents } from '../services/db';
 import { requestNotificationPermission, scheduleReminder, cancelReminder } from '../services/notifications';
 import { getWeeklyReport } from '../services/geminiService';
@@ -149,6 +149,9 @@ export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet,
   const breedTip = breedTips.length > 0
     ? breedTips[Math.floor(Date.now() / 86400000) % breedTips.length]
     : null;
+
+  // Community tip — rotates daily, offset so it differs from daily tip
+  const communityTip = COMMUNITY_TIPS[Math.floor(Date.now() / 86400000 + 3) % COMMUNITY_TIPS.length];
 
   const moodEmojis = ['😰', '😕', '😐', '🙂', '😊'];
 
@@ -442,6 +445,17 @@ export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet,
             </div>
           </section>
         )}
+
+        {/* Community Tip */}
+        <section className="bg-secondary/10 p-5 rounded-2xl border border-secondary/20 flex gap-3">
+          <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary flex-shrink-0 mt-0.5">
+            <span className="text-base">💬</span>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-secondary-dark uppercase tracking-wider mb-1">From the Community</p>
+            <p className="text-sm text-neutral-text leading-relaxed italic">{communityTip}</p>
+          </div>
+        </section>
       </div>
     </div>
   );

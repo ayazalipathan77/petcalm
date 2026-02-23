@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MOCK_SOUNDS } from '../constants';
-import { Play, Pause, Heart, Lock, Volume1, Sliders, X, Gauge, WifiOff, Timer, Zap, AlertCircle, Loader2, Plus } from 'lucide-react';
+import { Play, Pause, Heart, Lock, Volume1, Sliders, X, Gauge, WifiOff, Timer, Zap, AlertCircle, Loader2, Plus, Crown } from 'lucide-react';
 import { NoiseGenerator, isGeneratedNoise, getNoiseType } from '../services/audioEngine';
 import { useSetting } from '../services/db';
+import { usePro } from '../context/ProContext';
 
 export const Sounds: React.FC = () => {
+  const { isPro, openPaywall } = usePro();
   const [activeSoundId, setActiveSoundId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [category, setCategory] = useState('All');
@@ -188,6 +190,11 @@ export const Sounds: React.FC = () => {
   }, [isPlaying, volume, playbackSpeed, activeSoundId]);
 
   const handlePlay = (id: string) => {
+    const sound = MOCK_SOUNDS.find(s => s.id === id);
+    if (sound?.isPremium && !isPro) {
+      openPaywall();
+      return;
+    }
     if (activeSoundId === id) {
       setIsPlaying(!isPlaying);
     } else {
@@ -199,6 +206,11 @@ export const Sounds: React.FC = () => {
 
   const handleToggleMix = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const sound = MOCK_SOUNDS.find(s => s.id === id);
+    if (sound?.isPremium && !isPro) {
+      openPaywall();
+      return;
+    }
     if (mixSoundId === id) {
       stopMix();
       setMixSoundId(null);
@@ -249,32 +261,48 @@ export const Sounds: React.FC = () => {
           const isGenerated = isGeneratedNoise(sound.url);
           const isMixed = mixSoundId === sound.id;
           const isPrimary = activeSoundId === sound.id;
+          const isLocked = sound.isPremium && !isPro;
           return (
-            <div key={sound.id} className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all" onClick={() => handlePlay(sound.id)}>
+            <div key={sound.id} className={`group relative aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all ${isLocked ? 'opacity-80' : ''}`} onClick={() => handlePlay(sound.id)}>
               <div className={`absolute inset-0 ${sound.color} opacity-50 group-hover:opacity-60 transition-opacity`}></div>
               <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-20 h-20 bg-white/30 rounded-full blur-xl"></div>
               </div>
 
-              <div className="absolute inset-0 p-4 flex flex-col justify-between">
+              {/* Pro lock overlay */}
+              {isLocked && (
+                <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center gap-1 z-10">
+                  <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md">
+                    <Crown size={18} className="text-amber-500" />
+                  </div>
+                  <span className="text-[9px] font-bold text-white bg-amber-500/90 px-2 py-0.5 rounded-full uppercase tracking-wide">Pro</span>
+                </div>
+              )}
+
+              <div className="absolute inset-0 p-4 flex flex-col justify-between z-5">
                 <div className="flex justify-between items-start">
-                   {sound.isPremium && <Lock size={16} className="text-neutral-subtext" />}
-                   <button onClick={(e) => toggleFavorite(sound.id, e)} className="ml-auto">
-                     <Heart size={16} className={favorites.includes(sound.id) ? 'text-rose-500 fill-rose-500' : 'text-white'} />
+                   {isLocked
+                     ? <Lock size={14} className="text-white/70" />
+                     : <div />
+                   }
+                   <button onClick={(e) => { e.stopPropagation(); if (!isLocked) toggleFavorite(sound.id, e); }} className="ml-auto">
+                     <Heart size={16} className={!isLocked && favorites.includes(sound.id) ? 'text-rose-500 fill-rose-500' : 'text-white/60'} />
                    </button>
                 </div>
 
-                <div className="flex items-center justify-center">
-                   <div className={`w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg transition-transform ${isPrimary && isPlaying ? 'scale-110' : 'scale-100'}`}>
-                      {isPrimary && isBuffering ? (
-                         <Loader2 size={20} className="text-secondary animate-spin" />
-                      ) : isPrimary && isPlaying ? (
-                         <Pause size={20} className="text-secondary" fill="currentColor" />
-                      ) : (
-                         <Play size={20} className="text-secondary ml-1" fill="currentColor" />
-                      )}
-                   </div>
-                </div>
+                {!isLocked && (
+                  <div className="flex items-center justify-center">
+                     <div className={`w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg transition-transform ${isPrimary && isPlaying ? 'scale-110' : 'scale-100'}`}>
+                        {isPrimary && isBuffering ? (
+                           <Loader2 size={20} className="text-secondary animate-spin" />
+                        ) : isPrimary && isPlaying ? (
+                           <Pause size={20} className="text-secondary" fill="currentColor" />
+                        ) : (
+                           <Play size={20} className="text-secondary ml-1" fill="currentColor" />
+                        )}
+                     </div>
+                  </div>
+                )}
 
                 <div>
                   <h3 className="text-sm font-bold text-neutral-text leading-tight mb-0.5">{sound.title}</h3>
@@ -289,7 +317,7 @@ export const Sounds: React.FC = () => {
                         </p>
                       )}
                       {/* Mix button — only visible when a primary sound is active and this isn't it */}
-                      {activeSoundId && !isPrimary ? (
+                      {!isLocked && activeSoundId && !isPrimary ? (
                         <button
                           onClick={(e) => handleToggleMix(sound.id, e)}
                           className={`flex gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium transition-colors ${
@@ -299,11 +327,11 @@ export const Sounds: React.FC = () => {
                           {isMixed ? <X size={10} className="mt-0.5" /> : <Plus size={10} className="mt-0.5" />}
                           {isMixed ? 'Mixed' : 'Mix'}
                         </button>
-                      ) : (
+                      ) : !isLocked ? (
                         <div className="flex gap-1 text-[10px] text-neutral-500 bg-white/50 px-1.5 py-0.5 rounded-full">
                             <WifiOff size={10} className="mt-0.5" /> Offline
                         </div>
-                      )}
+                      ) : null}
                   </div>
                 </div>
               </div>

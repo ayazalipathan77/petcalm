@@ -16,11 +16,12 @@ interface HomeProps {
   pets: Pet[];
   activePetId: string | null;
   onSwitchPet: (id: string) => void;
+  onAddPet: () => void;
   onNavigate: (view: ViewState) => void;
   onPanic: () => void;
 }
 
-export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet, onNavigate, onPanic }) => {
+export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet, onAddPet, onNavigate, onPanic }) => {
   const { isPro, openPaywall } = usePro();
   const today = new Date().toISOString().split('T')[0];
 
@@ -168,7 +169,7 @@ export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet,
           <div>
             <h1 className="text-lg font-bold text-neutral-text leading-tight">{pet.name}</h1>
             <p className="text-xs text-neutral-subtext">{new Date().getHours() < 12 ? 'Good Morning!' : new Date().getHours() < 17 ? 'Good Afternoon!' : 'Good Evening!'}</p>
-            <PetSwitcher pets={pets} activePetId={activePetId} onSwitch={onSwitchPet} />
+            <PetSwitcher pets={pets} activePetId={activePetId} onSwitch={onSwitchPet} onAdd={onAddPet} />
           </div>
         </div>
         <button onClick={() => setShowReminders(true)} className="relative p-2 text-neutral-subtext hover:text-primary transition-colors">

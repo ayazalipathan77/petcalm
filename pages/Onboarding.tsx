@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Button } from '../components/ui/Button';
 import { Pet } from '../types';
 import { TRIGGERS } from '../constants';
-import { Dog, Cat, Camera, Check } from 'lucide-react';
+import { Dog, Cat, Camera, Check, X } from 'lucide-react';
 
 interface OnboardingProps {
   onComplete: (pet: Pet) => void;
+  onCancel?: () => void;
 }
 
-export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
+export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<Pet>>({
     name: '',
@@ -38,9 +39,18 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-neutral-surface to-neutral-bg">
+      {/* Top bar with cancel */}
+      {onCancel && (
+        <div className="flex justify-between items-center px-4 pt-4 pb-0">
+          <span className="text-sm font-semibold text-primary">Add Another Pet</span>
+          <button onClick={onCancel} className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-neutral-800 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+      )}
       {/* Progress Bar */}
-      <div className="h-1.5 bg-neutral-200 w-full">
-        <div 
+      <div className="h-1.5 bg-neutral-200 w-full mt-3">
+        <div
           className="h-full bg-primary transition-all duration-500 ease-out"
           style={{ width: `${(step / 3) * 100}%` }}
         />

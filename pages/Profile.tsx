@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Pet, ViewState } from '../types';
 import { Button } from '../components/ui/Button';
-import { Camera, Save, Check, Trash2, Shield, BookOpen, Crown, Star } from 'lucide-react';
+import { Camera, Save, Check, Trash2, Shield, BookOpen, Crown, Star, Moon, Sun } from 'lucide-react';
 import { TRIGGERS } from '../constants';
 import { usePro } from '../context/ProContext';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 interface ProfileProps {
   pet: Pet;
@@ -18,6 +19,7 @@ const AVATARS = [
 
 export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet, onNavigate }) => {
   const { isPro, openPaywall } = usePro();
+  const { isDark, toggle: toggleDark } = useDarkMode();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [name, setName] = useState(pet.name);
   const [breed, setBreed] = useState(pet.breed);
@@ -214,6 +216,24 @@ export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet, 
                 <p className="text-center text-[10px] text-neutral-400 mt-2">7-day free trial · $34.99/yr or $4.99/mo</p>
               </div>
             )}
+          </section>
+
+          {/* Appearance */}
+          <section className="pt-4 border-t border-neutral-200">
+            <h2 className="text-xs font-bold text-neutral-subtext uppercase tracking-wider mb-3">Appearance</h2>
+            <button
+              onClick={toggleDark}
+              className="flex items-center justify-between w-full px-4 py-3 bg-neutral-50 rounded-xl border border-neutral-200 hover:border-primary/40 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                {isDark ? <Moon size={18} className="text-primary" /> : <Sun size={18} className="text-primary" />}
+                <span className="text-sm font-medium text-neutral-text">{isDark ? 'Dark Mode' : 'Light Mode'}</span>
+              </div>
+              {/* Toggle pill */}
+              <div className={`w-11 h-6 rounded-full transition-colors relative ${isDark ? 'bg-primary' : 'bg-neutral-200'}`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isDark ? 'left-6' : 'left-1'}`} />
+              </div>
+            </button>
           </section>
 
           {/* Privacy & Legal */}

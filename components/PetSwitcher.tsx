@@ -1,19 +1,19 @@
 import React from 'react';
 import { Pet } from '../types';
+import { PlusCircle } from 'lucide-react';
 
 interface PetSwitcherProps {
   pets: Pet[];
   activePetId: string | null;
   onSwitch: (id: string) => void;
+  onAdd?: () => void;
 }
 
 const isImage = (url?: string) => url && (url.startsWith('http') || url.startsWith('data:'));
 
-export const PetSwitcher: React.FC<PetSwitcherProps> = ({ pets, activePetId, onSwitch }) => {
-  if (pets.length <= 1) return null;
-
+export const PetSwitcher: React.FC<PetSwitcherProps> = ({ pets, activePetId, onSwitch, onAdd }) => {
   return (
-    <div className="flex gap-1.5 mt-1">
+    <div className="flex gap-1.5 mt-1 items-center">
       {pets.map(p => (
         <button
           key={p.id}
@@ -32,6 +32,15 @@ export const PetSwitcher: React.FC<PetSwitcherProps> = ({ pets, activePetId, onS
           )}
         </button>
       ))}
+      {onAdd && (
+        <button
+          onClick={onAdd}
+          title="Add another pet"
+          className="w-6 h-6 rounded-full flex items-center justify-center text-neutral-400 hover:text-primary transition-colors"
+        >
+          <PlusCircle size={16} />
+        </button>
+      )}
     </div>
   );
 };

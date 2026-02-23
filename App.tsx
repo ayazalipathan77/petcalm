@@ -18,6 +18,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
   const [isPanicMode, setIsPanicMode] = useState(false);
   const [migrated, setMigrated] = useState(false);
+  const [showAddPet, setShowAddPet] = useState(false);
 
   // Run localStorage -> IndexedDB migration on first load
   useEffect(() => {
@@ -34,6 +35,11 @@ const App: React.FC = () => {
   const handleOnboardingComplete = async (newPet: Pet) => {
     await addPet(newPet);
     setView('HOME');
+  };
+
+  const handleAddPetComplete = async (newPet: Pet) => {
+    await addPet(newPet);
+    setShowAddPet(false);
   };
 
   const handleUpdatePet = async (updatedPet: Pet) => {
@@ -65,6 +71,7 @@ const App: React.FC = () => {
             pets={pets}
             activePetId={activePetId}
             onSwitchPet={setActivePet}
+            onAddPet={() => setShowAddPet(true)}
             onNavigate={setView}
             onPanic={() => setIsPanicMode(true)}
           />
@@ -100,6 +107,11 @@ const App: React.FC = () => {
   return (
     <ProProvider>
       {isPanicMode && <PanicMode onExit={() => setIsPanicMode(false)} petName={activePet?.name || 'Your Pet'} />}
+      {showAddPet && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <Onboarding onComplete={handleAddPetComplete} onCancel={() => setShowAddPet(false)} />
+        </div>
+      )}
       <Layout currentView={view} onNavigate={setView} onPanic={() => setIsPanicMode(true)}>
         {renderContent()}
       </Layout>

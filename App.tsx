@@ -11,6 +11,7 @@ import { Guide } from './pages/Guide';
 import { Privacy } from './pages/Privacy';
 import { ViewState, Pet } from './types';
 import { usePets, migrateFromLocalStorage } from './services/db';
+import { ProProvider } from './context/ProContext';
 
 const App: React.FC = () => {
   const { pets, activePet, activePetId, loading, savePet, addPet, setActivePet, deleteAllData } = usePets();
@@ -97,12 +98,12 @@ const App: React.FC = () => {
   }
 
   return (
-    <>
+    <ProProvider>
       {isPanicMode && <PanicMode onExit={() => setIsPanicMode(false)} petName={activePet?.name || 'Your Pet'} />}
       <Layout currentView={view} onNavigate={setView} onPanic={() => setIsPanicMode(true)}>
         {renderContent()}
       </Layout>
-    </>
+    </ProProvider>
   );
 };
 

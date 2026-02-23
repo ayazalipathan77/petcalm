@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Shield, Pill, Stethoscope, Puzzle, Brain } from 'lucide-react';
+import { ChevronDown, ChevronUp, Shield, Pill, Stethoscope, Puzzle, Brain, Crown } from 'lucide-react';
+import { usePro } from '../context/ProContext';
 
 interface GuideCard {
   id: string;
@@ -10,7 +11,7 @@ interface GuideCard {
   detail: string;
 }
 
-const GUIDE_SECTIONS: { title: string; cards: GuideCard[] }[] = [
+const GUIDE_SECTIONS: { title: string; proOnly?: boolean; cards: GuideCard[] }[] = [
   {
     title: 'Pheromone Therapy',
     cards: [
@@ -76,6 +77,7 @@ const GUIDE_SECTIONS: { title: string; cards: GuideCard[] }[] = [
   },
   {
     title: 'Environmental Enrichment',
+    proOnly: true,
     cards: [
       {
         id: 'lickmat',
@@ -113,6 +115,7 @@ const GUIDE_SECTIONS: { title: string; cards: GuideCard[] }[] = [
   },
   {
     title: 'Senior Pet Anxiety (CDS)',
+    proOnly: true,
     cards: [
       {
         id: 'dishaa',
@@ -136,9 +139,14 @@ const evidenceBadgeColor = (level: string) => {
 };
 
 export const Guide: React.FC = () => {
+  const { isPro, openPaywall } = usePro();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const toggle = (id: string) => {
+  const toggle = (id: string, proOnly?: boolean) => {
+    if (proOnly && !isPro) {
+      openPaywall();
+      return;
+    }
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -147,45 +155,58 @@ export const Guide: React.FC = () => {
       <h1 className="text-2xl font-bold text-neutral-text mb-2">Wellness Guide</h1>
       <p className="text-sm text-neutral-subtext mb-6">Evidence-based therapies, supplements, and enrichment strategies. Always consult your veterinarian.</p>
 
-      {GUIDE_SECTIONS.map((section) => (
-        <div key={section.title} className="mb-6">
-          <h2 className="text-xs font-bold text-neutral-subtext uppercase tracking-wider mb-3">{section.title}</h2>
-          <div className="space-y-3">
-            {section.cards.map((card) => {
-              const isOpen = expanded[card.id] || false;
-              return (
-                <div key={card.id} className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden">
-                  <button
-                    onClick={() => toggle(card.id)}
-                    className="w-full p-4 flex items-start gap-3 text-left"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                      {card.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-neutral-text text-sm">{card.title}</h3>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${evidenceBadgeColor(card.evidence)}`}>
-                          {card.evidence}
-                        </span>
+      {GUIDE_SECTIONS.map((section) => {
+        const sectionLocked = section.proOnly && !isPro;
+        return (
+          <div key={section.title} className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-xs font-bold text-neutral-subtext uppercase tracking-wider">{section.title}</h2>
+              {sectionLocked && (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                  <Crown size={9} /> PRO
+                </span>
+              )}
+            </div>
+            <div className="space-y-3">
+              {section.cards.map((card) => {
+                const isOpen = expanded[card.id] || false;
+                return (
+                  <div key={card.id} className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden">
+                    <button
+                      onClick={() => toggle(card.id, section.proOnly)}
+                      className="w-full p-4 flex items-start gap-3 text-left"
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${sectionLocked ? 'bg-amber-50 text-amber-500' : 'bg-primary/10 text-primary'}`}>
+                        {sectionLocked ? <Crown size={20} /> : card.icon}
                       </div>
-                      <p className="text-xs text-neutral-subtext leading-relaxed">{card.summary}</p>
-                    </div>
-                    <div className="flex-shrink-0 text-neutral-400 mt-1">
-                      {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                    </div>
-                  </button>
-                  {isOpen && (
-                    <div className="px-4 pb-4 pt-0 ml-[52px] border-t border-neutral-50">
-                      <p className="text-xs text-neutral-text leading-relaxed whitespace-pre-line pt-3">{card.detail}</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-neutral-text text-sm">{card.title}</h3>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${evidenceBadgeColor(card.evidence)}`}>
+                            {card.evidence}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-subtext leading-relaxed">{card.summary}</p>
+                        {sectionLocked && (
+                          <p className="text-[11px] text-amber-600 font-medium mt-1">Tap to unlock clinical detail — Pro feature</p>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 text-neutral-400 mt-1">
+                        {sectionLocked ? <Crown size={16} className="text-amber-400" /> : isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                      </div>
+                    </button>
+                    {isOpen && !sectionLocked && (
+                      <div className="px-4 pb-4 pt-0 ml-[52px] border-t border-neutral-50">
+                        <p className="text-xs text-neutral-text leading-relaxed whitespace-pre-line pt-3">{card.detail}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

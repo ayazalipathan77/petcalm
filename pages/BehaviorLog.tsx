@@ -3,12 +3,15 @@ import { Incident } from '../types';
 import { TRIGGERS } from '../constants';
 import { Button } from '../components/ui/Button';
 import { getBehaviorAnalysis } from '../services/geminiService';
-import { Plus, BarChart2, Calendar, BrainCircuit, Trash2, Pencil, FileDown } from 'lucide-react';
+import { Plus, BarChart2, Calendar, BrainCircuit, Trash2, Pencil, FileDown, Crown, Lock } from 'lucide-react';
 import { BottomSheet } from '../components/BottomSheet';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useIncidents } from '../services/db';
 import jsPDF from 'jspdf';
 import { shouldPromptReview, requestAppReview, markReviewPrompted } from '../services/appReview';
+import { usePro } from '../context/ProContext';
+
+const FREE_HISTORY_DAYS = 30;
 
 interface BehaviorLogProps {
   petName: string;
@@ -16,7 +19,16 @@ interface BehaviorLogProps {
 }
 
 export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName, petId }) => {
+  const { isPro, openPaywall } = usePro();
   const { incidents, hasMore, loadMore, addIncident, updateIncident, deleteIncident } = useIncidents(petId);
+
+  // Free users see only last 30 days; Pro users see all
+  const visibleIncidents = isPro
+    ? incidents
+    : incidents.filter(i => {
+        const daysDiff = (Date.now() - new Date(i.date).getTime()) / 86400000;
+        return daysDiff <= FREE_HISTORY_DAYS;
+      });
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
@@ -134,8 +146,8 @@ export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName, petId }) => {
     setIsAnalyzing(false);
   };
 
-  // Prepare chart data
-  const data = incidents.slice(0, 7).reverse().map(i => ({
+  // Prepare chart data (always show all for chart, only filter list)
+  const data = visibleIncidents.slice(0, 7).reverse().map(i => ({
     name: new Date(i.date).toLocaleDateString('en-US', { weekday: 'short' }),
     severity: i.severity
   }));
@@ -150,7 +162,7 @@ export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName, petId }) => {
       </div>
 
       {/* Chart */}
-      {incidents.length === 0 ? (
+      {visibleIncidents.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
             <span className="text-4xl">📋</span>
@@ -194,11 +206,11 @@ export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName, petId }) => {
         <Button
           variant="ghost"
           fullWidth
-          onClick={exportVetReport}
+          onClick={isPro ? exportVetReport : openPaywall}
           className="flex items-center justify-center gap-2"
         >
-          <FileDown size={18} />
-          Export PDF
+          {isPro ? <FileDown size={18} /> : <Crown size={18} className="text-amber-500" />}
+          {isPro ? 'Export PDF' : 'Export PDF (Pro)'}
         </Button>
       </div>
 
@@ -216,8 +228,18 @@ export const BehaviorLog: React.FC<BehaviorLogProps> = ({ petName, petId }) => {
 
       {/* List */}
       <h3 className="text-xs font-bold text-neutral-subtext uppercase tracking-wider mb-3">Recent Incidents</h3>
+      {!isPro && incidents.length > visibleIncidents.length && (
+        <button
+          onClick={openPaywall}
+          className="w-full mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-sm text-amber-700 font-medium"
+        >
+          <Lock size={14} />
+          {incidents.length - visibleIncidents.length} older entries hidden — Upgrade to Pro to see full history
+          <Crown size={14} className="ml-auto text-amber-500" />
+        </button>
+      )}
       <div className="space-y-3">
-        {incidents.map(incident => (
+        {visibleIncidents.map(incident => (
           <div key={incident.id} className="bg-white p-4 rounded-xl border border-neutral-100 flex gap-4">
              <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
                 incident.severity >= 4 ? 'bg-status-error' : incident.severity === 3 ? 'bg-status-warning' : 'bg-status-success'

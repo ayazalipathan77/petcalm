@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ScheduleItem } from '../types';
 import { Pet, ViewState } from '../types';
-import { Bell, Music, Play, Calendar, Plus, X, BookOpen, Footprints, Stethoscope, UtensilsCrossed, BrainCircuit, Sparkles } from 'lucide-react';
+import { Bell, Music, Play, Calendar, Plus, X, BookOpen, Footprints, Stethoscope, UtensilsCrossed, BrainCircuit, Sparkles, Crown } from 'lucide-react';
 import { BottomSheet } from '../components/BottomSheet';
 import { Button } from '../components/ui/Button';
 import { PetSwitcher } from '../components/PetSwitcher';
@@ -9,6 +9,7 @@ import { DAILY_TIPS, MOCK_PROGRAMS, BREED_TIPS } from '../constants';
 import { useMoodLogs, useSchedule, useReminders, useSetting, useIncidents } from '../services/db';
 import { requestNotificationPermission, scheduleReminder, cancelReminder } from '../services/notifications';
 import { getWeeklyReport } from '../services/geminiService';
+import { usePro } from '../context/ProContext';
 
 interface HomeProps {
   pet: Pet;
@@ -20,6 +21,7 @@ interface HomeProps {
 }
 
 export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet, onNavigate, onPanic }) => {
+  const { isPro, openPaywall } = usePro();
   const today = new Date().toISOString().split('T')[0];
 
   // Dexie hooks — filtered by active pet where applicable
@@ -401,12 +403,12 @@ export const Home: React.FC<HomeProps> = ({ pet, pets, activePetId, onSwitchPet,
               <Button
                 variant="ghost"
                 fullWidth
-                onClick={handleWeeklyReport}
+                onClick={isPro ? handleWeeklyReport : openPaywall}
                 isLoading={isLoadingReport}
                 className="flex items-center justify-center gap-2 border border-secondary/30 text-secondary-dark"
               >
-                <BrainCircuit size={16} />
-                Generate Weekly Report
+                {isPro ? <BrainCircuit size={16} /> : <Crown size={16} className="text-amber-500" />}
+                {isPro ? 'Generate Weekly Report' : 'Weekly Report (Pro)'}
               </Button>
             )}
           </section>

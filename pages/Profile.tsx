@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Pet, ViewState } from '../types';
 import { Button } from '../components/ui/Button';
-import { Camera, Save, Check, Trash2, Shield, BookOpen } from 'lucide-react';
+import { Camera, Save, Check, Trash2, Shield, BookOpen, Crown, Star } from 'lucide-react';
 import { TRIGGERS } from '../constants';
+import { usePro } from '../context/ProContext';
 
 interface ProfileProps {
   pet: Pet;
@@ -16,6 +17,7 @@ const AVATARS = [
 ];
 
 export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet, onNavigate }) => {
+  const { isPro, openPaywall } = usePro();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [name, setName] = useState(pet.name);
   const [breed, setBreed] = useState(pet.breed);
@@ -173,6 +175,45 @@ export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet, 
                 )
               })}
             </div>
+          </section>
+
+          {/* Subscription Status */}
+          <section className="pt-4 border-t border-neutral-200">
+            {isPro ? (
+              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                    <Crown size={20} className="text-amber-600" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-amber-800 text-sm">Pro Member</span>
+                      <Star size={12} className="text-amber-500 fill-amber-500" />
+                    </div>
+                    <p className="text-xs text-amber-600">All features unlocked</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => window.open('https://play.google.com/store/account/subscriptions', '_blank')}
+                  className="text-xs text-amber-600 underline"
+                >
+                  Manage subscription in Play Store
+                </button>
+              </div>
+            ) : (
+              <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-bold text-neutral-text text-sm">Free Plan</p>
+                    <p className="text-xs text-neutral-subtext">3 programs · basic sounds · 30-day log</p>
+                  </div>
+                </div>
+                <Button fullWidth onClick={openPaywall} className="gap-2">
+                  <Crown size={16} /> Upgrade to Pro
+                </Button>
+                <p className="text-center text-[10px] text-neutral-400 mt-2">7-day free trial · $34.99/yr or $4.99/mo</p>
+              </div>
+            )}
           </section>
 
           {/* Privacy & Legal */}

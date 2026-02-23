@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MOCK_PROGRAMS } from '../constants';
 import { TrainingProgram } from '../types';
-import { ChevronRight, Sparkles, Home, Car, Lock, CheckCircle, ArrowLeft, Info, Leaf, PlayCircle, Timer, Pause } from 'lucide-react';
+import { ChevronRight, Sparkles, Home, Car, Lock, CheckCircle, ArrowLeft, Info, Leaf, PlayCircle, Timer, Pause, Crown } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useSetting } from '../services/db';
 import { shouldPromptReview, requestAppReview, markReviewPrompted } from '../services/appReview';
+import { usePro } from '../context/ProContext';
+
+const FREE_PROGRAM_LIMIT = 3; // p1, p2, p3 are free
 
 // Parse "5 mins" → 300, "3 mins" → 180; returns null for reps/days
 const parseDurationToSeconds = (duration: string): number | null => {
@@ -22,6 +25,7 @@ const formatTime = (secs: number) => {
 };
 
 export const Training: React.FC = () => {
+  const { isPro, openPaywall } = usePro();
   const [selectedProgram, setSelectedProgram] = useState<TrainingProgram | null>(null);
   const { value: savedProgress, save: saveProgress, loaded } = useSetting<Record<string, number>>('training_progress', {});
 
@@ -254,28 +258,35 @@ export const Training: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {localPrograms.map(program => {
+        {localPrograms.map((program, index) => {
+           const isProLocked = !isPro && index >= FREE_PROGRAM_LIMIT;
            const isStarted = program.completedStepIndex > 0;
            const progress = (program.completedStepIndex / program.steps.length) * 100;
 
            return (
             <div
               key={program.id}
-              onClick={() => setSelectedProgram(program)}
-              className="bg-white p-4 rounded-2xl border border-neutral-100 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
+              onClick={() => isProLocked ? openPaywall() : setSelectedProgram(program)}
+              className={`bg-white p-4 rounded-2xl border border-neutral-100 transition-all cursor-pointer group relative overflow-hidden ${
+                isProLocked ? 'opacity-70' : 'hover:border-primary/30 hover:shadow-md'
+              }`}
             >
-              {isStarted && (
+              {isStarted && !isProLocked && (
                 <div className="absolute bottom-0 left-0 h-1 bg-primary transition-all duration-500" style={{ width: `${progress}%` }}></div>
               )}
 
               <div className="flex items-start gap-4 mb-3">
-                <div className={`p-3 rounded-xl ${isStarted ? 'bg-secondary/10 text-secondary' : 'bg-neutral-100 text-neutral-400'}`}>
-                  {getIcon(program.icon)}
+                <div className={`p-3 rounded-xl ${isProLocked ? 'bg-neutral-100 text-neutral-300' : isStarted ? 'bg-secondary/10 text-secondary' : 'bg-neutral-100 text-neutral-400'}`}>
+                  {isProLocked ? <Lock size={20} /> : getIcon(program.icon)}
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
                     <h3 className="font-bold text-neutral-text text-sm mb-1">{program.title}</h3>
-                    {isStarted ? (
+                    {isProLocked ? (
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                        <Crown size={10} /> PRO
+                      </span>
+                    ) : isStarted ? (
                        <span className="text-[10px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-full">{Math.round(progress)}%</span>
                     ) : (
                        <span className="text-[10px] font-bold text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full">Start</span>
@@ -285,8 +296,10 @@ export const Training: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                View Curriculum <ChevronRight size={14} />
+              <div className={`flex items-center gap-1 text-xs font-medium justify-end ${
+                isProLocked ? 'text-amber-500 opacity-100' : 'text-primary opacity-0 group-hover:opacity-100 transition-opacity'
+              }`}>
+                {isProLocked ? <><Crown size={12} /> Unlock with Pro</> : <>View Curriculum <ChevronRight size={14} /></>}
               </div>
             </div>
           )

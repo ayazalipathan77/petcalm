@@ -13,6 +13,7 @@ dependencies {
     implementation project(':capacitor-splash-screen')
     implementation project(':capawesome-capacitor-app-review')
     implementation project(':revenuecat-purchases-capacitor')
+    implementation project(':revenuecat-purchases-capacitor-ui')
 
 }
 

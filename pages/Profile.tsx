@@ -18,7 +18,7 @@ const AVATARS = [
 ];
 
 export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet, onNavigate }) => {
-  const { isPro, openPaywall } = usePro();
+  const { isPro, openPaywall, openCustomerCenter } = usePro();
   const { isDark, toggle: toggleDark } = useDarkMode();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [name, setName] = useState(pet.name);
@@ -196,10 +196,10 @@ export const Profile: React.FC<ProfileProps> = ({ pet, onUpdatePet, onResetPet, 
                   </div>
                 </div>
                 <button
-                  onClick={() => window.open('https://play.google.com/store/account/subscriptions', '_blank')}
+                  onClick={openCustomerCenter}
                   className="text-xs text-amber-600 underline"
                 >
-                  Manage subscription in Play Store
+                  Manage Subscription
                 </button>
               </div>
             ) : (

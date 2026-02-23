@@ -1,6 +1,13 @@
+/**
+ * PaywallModal — browser-only fallback preview.
+ *
+ * On native Android/iOS the RevenueCat native paywall sheet is presented
+ * instead (via RevenueCatUI.presentPaywall). This modal is only shown when
+ * running in a browser / dev server and cannot process real purchases.
+ */
 import React, { useState } from 'react';
-import { X, Sparkles, CheckCircle, RotateCcw, Loader } from 'lucide-react';
-import { purchasePackageById, restorePurchases } from '../services/purchases';
+import { X, Sparkles, CheckCircle, RotateCcw, Smartphone, Loader } from 'lucide-react';
+import { restorePurchases } from '../services/purchases';
 
 interface PaywallModalProps {
   onClose: () => void;
@@ -11,29 +18,22 @@ const BENEFITS = [
   'All 10 vet-backed training programs — unlock 7 more beyond the free tier',
   'Full sound library: specialized generators, classical & nature packs',
   'AI weekly behavior insights, unlimited log history & PDF vet reports',
+  'Binaural theta, purring frequency & psychoacoustic music tracks',
 ];
 
 export const PaywallModal: React.FC<PaywallModalProps> = ({ onClose, onSuccess }) => {
-  const [plan, setPlan] = useState<'annual' | 'monthly'>('annual');
-  const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
-
-  const handlePurchase = async () => {
-    setLoading(true);
-    const packageId = plan === 'annual' ? '$rc_annual' : '$rc_monthly';
-    const success = await purchasePackageById(packageId);
-    setLoading(false);
-    if (success) onSuccess();
-  };
+  const [restoreMsg, setRestoreMsg] = useState('');
 
   const handleRestore = async () => {
     setRestoring(true);
+    setRestoreMsg('');
     const isPro = await restorePurchases();
     setRestoring(false);
     if (isPro) {
       onSuccess();
     } else {
-      alert('No active Pro subscription found on this account.');
+      setRestoreMsg('No active Pro subscription found on this account.');
     }
   };
 
@@ -43,7 +43,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({ onClose, onSuccess }
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="relative w-full max-w-md bg-white rounded-t-3xl shadow-2xl overflow-hidden animate-slide-up">
+      <div className="relative w-full max-w-md bg-white rounded-t-3xl shadow-2xl overflow-hidden">
         {/* Close */}
         <button
           onClick={onClose}
@@ -57,7 +57,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({ onClose, onSuccess }
           <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
             <Sparkles size={28} />
           </div>
-          <h2 className="text-2xl font-bold mb-1">Upgrade to Pro</h2>
+          <h2 className="text-2xl font-bold mb-1">PetCalm Pro</h2>
           <p className="text-sm text-white/80">Everything your anxious pet needs, unlocked</p>
         </div>
 
@@ -72,59 +72,41 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({ onClose, onSuccess }
             ))}
           </ul>
 
-          {/* Plan toggle */}
-          <div className="flex gap-3 mb-4">
-            {/* Annual */}
-            <button
-              onClick={() => setPlan('annual')}
-              className={`flex-1 p-3 rounded-2xl border-2 text-left transition-all relative ${
-                plan === 'annual' ? 'border-primary bg-primary/5' : 'border-neutral-200 bg-white'
-              }`}
-            >
-              {plan === 'annual' && (
-                <span className="absolute -top-2.5 left-3 text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">
-                  BEST VALUE
-                </span>
-              )}
+          {/* Pricing summary */}
+          <div className="flex gap-3 mb-5">
+            <div className="flex-1 p-3 rounded-2xl border-2 border-primary bg-primary/5 text-left relative">
+              <span className="absolute -top-2.5 left-3 text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">
+                BEST VALUE
+              </span>
               <div className="font-bold text-neutral-text text-sm">Annual</div>
               <div className="text-lg font-bold text-primary">$34.99<span className="text-xs font-normal text-neutral-400">/yr</span></div>
               <div className="text-[11px] text-status-success font-medium">7-day free trial · Save 42%</div>
-            </button>
-
-            {/* Monthly */}
-            <button
-              onClick={() => setPlan('monthly')}
-              className={`flex-1 p-3 rounded-2xl border-2 text-left transition-all ${
-                plan === 'monthly' ? 'border-primary bg-primary/5' : 'border-neutral-200 bg-white'
-              }`}
-            >
+            </div>
+            <div className="flex-1 p-3 rounded-2xl border-2 border-neutral-200 bg-white text-left">
               <div className="font-bold text-neutral-text text-sm">Monthly</div>
               <div className="text-lg font-bold text-primary">$4.99<span className="text-xs font-normal text-neutral-400">/mo</span></div>
               <div className="text-[11px] text-neutral-400">Cancel anytime</div>
-            </button>
+            </div>
           </div>
 
-          {/* CTA */}
-          <button
-            onClick={handlePurchase}
-            disabled={loading}
-            className="w-full py-4 bg-primary text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-primary-dark transition-colors disabled:opacity-60"
-          >
-            {loading ? (
-              <><Loader size={18} className="animate-spin" /> Processing…</>
-            ) : (
-              plan === 'annual' ? 'Start 7-Day Free Trial' : 'Start Pro — $4.99/mo'
-            )}
-          </button>
+          {/* Device-only notice */}
+          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-5">
+            <Smartphone size={20} className="text-amber-600 flex-shrink-0" />
+            <p className="text-xs text-amber-800 leading-snug">
+              <strong>Purchases available on your device.</strong> Install the app on Android to subscribe via Google Play.
+            </p>
+          </div>
 
-          {/* Restore + close */}
-          <div className="flex justify-between mt-4 pb-2">
+          {/* Restore & close */}
+          <div className="flex justify-between items-center pb-2">
             <button
               onClick={handleRestore}
               disabled={restoring}
               className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
             >
-              <RotateCcw size={12} />
+              {restoring
+                ? <Loader size={12} className="animate-spin" />
+                : <RotateCcw size={12} />}
               {restoring ? 'Checking…' : 'Restore Purchases'}
             </button>
             <button onClick={onClose} className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors">
@@ -132,9 +114,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({ onClose, onSuccess }
             </button>
           </div>
 
-          <p className="text-center text-[10px] text-neutral-300 mt-2">
-            Billed via Google Play. Cancel anytime in Play Store settings.
-          </p>
+          {restoreMsg && (
+            <p className="text-center text-xs text-red-500 mt-2">{restoreMsg}</p>
+          )}
         </div>
       </div>
     </div>
